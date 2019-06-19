@@ -91,3 +91,17 @@ Get the FQDN suffix.
 {{- include "mongodb.fullname" . -}}.{{ .Release.Namespace }}.svc
 {{- end -}}
 {{- end -}}
+
+{{/*
+Get the announce address.
+*/}}
+{{- define "mongodb.announceAddress" -}}
+{{- $fullName := include "mongodb.fullname" . -}}
+{{- $suffixFQDN := include "mongodb.suffixFQDN" . -}}
+{{- $replicas := int .Values.replicas -}}
+{{- $dbport := int .Values.mongodb.port -}}
+{{- range $i := until $replicas -}}
+{{- if gt $i 0 }},{{ end -}}
+{{ $fullName }}-{{ $i }}.{{ $suffixFQDN }}:{{ $dbport }}
+{{- end -}}
+{{- end -}}
