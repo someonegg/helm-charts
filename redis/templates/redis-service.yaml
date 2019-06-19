@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "redis.fullname" . }}
+  labels:
+    {{- include "redis.labels" . | nindent 4 }}
+  annotations:
+    {{- with .Values.svcAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - name: redis
+    port: {{ .Values.redis.port }}
+    protocol: TCP
+    targetPort: redis
+  - name: sentinel
+    port: {{ .Values.sentinel.port }}
+    protocol: TCP
+    targetPort: sentinel
+  {{- if .Values.metrics.enabled }}
+  - name: metrics
+    port: {{ .Values.metrics.port }}
+    targetPort: metrics
+  {{- end }}
+  selector:
+    app.kubernetes.io/name: {{ include "redis.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}

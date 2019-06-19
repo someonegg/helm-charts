@@ -1,0 +1,144 @@
+## Default values for mongodb.
+
+replicas: 3
+replicaSetName: rs0
+manualMode: false
+
+auth:
+  enabled: false
+  adminUser: admin
+  adminPassword: QIEbsW7D
+  metricsUser: metric
+  metricsPassword: ZoEQD1qf
+  key: |
+    5sQGKYvjc8ov0OCqb3+Vf+LwnKuLZpwfCH2Ywgqzave56YfdBl4+ctahnHT0qiHj
+    y/ZYv/GBWVhZioNdqk+RUPlvjkgZQ0ViFAOmPRpCRc/bAG1XsrnfHL/v
+
+  # existingKeySecret:
+  # existingAdminSecret:
+  # existingMetricsSecret:
+
+extraLabels: {}
+
+## Pod config
+
+image:
+  repository: mongo
+  tag: 3.6.13
+  pullPolicy: IfNotPresent
+
+persistentVolume:
+  enabled: false
+  # storageClass: "-"
+  accessModes:
+  - ReadWriteOnce
+  size: 10Gi
+  annotations: {}
+
+podDisruptionBudget: {}
+  # maxUnavailable: 1
+  # minAvailable: 2
+
+podAnnotations: {}
+
+svcAnnotations: {}
+
+securityContext:
+  runAsUser: 999
+  fsGroup: 999
+  runAsNonRoot: true
+
+hostNetwork: false
+terminationGracePeriodSeconds: 30
+
+## Pod assignment
+
+nodeSelector: {}
+
+tolerations: []
+
+# affinity: |
+  ## go tpl
+
+# schedulerName: stork
+
+## Containers
+
+initSysctl:
+  enabled: false
+  image:
+    repository: bitnami/minideb
+    tag: latest
+    pullPolicy: IfNotPresent
+  command: []
+  mountHostSys: false
+
+initConfig:
+  resources: {}
+    # requests:
+    #   memory: 200Mi
+    #   cpu: 100m
+    # limits:
+    #   memory: 200Mi
+
+mongodb:
+  port: 27017
+  # suffixFQDN: servers.xxx.com
+
+  configmap: {}
+
+  extraEnvs: {}
+  # - name: TCMALLOC_AGGRESSIVE_DECOMMIT
+  #   value: "true"
+
+  initPort: 27018
+  ## This is the recommended way to create indexes on replicasets.
+  ## ref: https://docs.mongodb.com/manual/tutorial/build-indexes-on-replica-sets/
+  # initStandalone: |
+  #  db = db.getSiblingDB("mydb")
+  #  db.my_users.createIndex({email: 1})
+
+  readinessProbe:
+    initialDelaySeconds: 5
+    timeoutSeconds: 1
+    failureThreshold: 3
+    periodSeconds: 10
+    successThreshold: 1
+  livenessProbe:
+    initialDelaySeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+    periodSeconds: 10
+    successThreshold: 1
+
+  resources: {}
+
+metrics:
+  enabled: false
+  image:
+    repository: ssalaues/mongodb-exporter
+    tag: 0.6.1
+    pullPolicy: IfNotPresent
+
+  extraArgs: |-
+    --mongodb.socket-timeout=3s \
+    --mongodb.sync-timeout=1m
+
+  ## prometheus port & scrape path
+  port: 9216
+  path: "/metrics"
+
+  prometheusDiscovery: false
+
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 10s
+    prometheusNamespace: "monitor"
+    prometheusSelector: {}
+
+  livenessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 15
+
+  resources: {}

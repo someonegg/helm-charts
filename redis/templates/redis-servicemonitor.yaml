@@ -1,0 +1,29 @@
+{{- if .Values.metrics.enabled -}}
+{{- if and (.Values.metrics.serviceMonitor.enabled) (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1") -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "redis.fullname" . }}
+  {{- with .Values.metrics.serviceMonitor.prometheusNamespace }}
+  namespace: {{ . }}
+  {{- end }}
+  labels:
+    {{- include "redis.labels" . | nindent 4 }}
+    {{- with .Values.metrics.serviceMonitor.prometheusSelector }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  endpoints:
+  - port: metrics
+    interval: {{ .Values.metrics.serviceMonitor.interval }}
+    scrapeTimeout: {{ .Values.metrics.serviceMonitor.scrapeTimeout }}
+    path: {{ .Values.metrics.path }}
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "redis.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end -}}
+{{- end -}}

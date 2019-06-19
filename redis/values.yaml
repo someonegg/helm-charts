@@ -1,0 +1,151 @@
+## Default values for redis.
+
+replicas: 3
+masterGroupName: mg0
+manualMode: false
+
+auth:
+  enabled: false
+  password: M5t7Oumg
+  # existingSecret: redis-password
+
+extraLabels: {}
+
+## Pod config
+
+image:
+  repository: redis
+  tag: 4.0.14
+  pullPolicy: IfNotPresent
+
+persistentVolume:
+  enabled: false
+  # storageClass: "-"
+  accessModes:
+  - ReadWriteOnce
+  size: 10Gi
+  annotations: {}
+
+podDisruptionBudget: {}
+  # maxUnavailable: 1
+  # minAvailable: 1
+
+podAnnotations: {}
+
+svcAnnotations: {}
+
+securityContext:
+  runAsUser: 1000
+  fsGroup: 1000
+  runAsNonRoot: true
+
+hostNetwork: false
+terminationGracePeriodSeconds: 30
+
+## Pod assignment
+
+nodeSelector: {}
+
+tolerations: []
+
+# affinity: |
+  ## go tpl
+
+# schedulerName: stork
+
+## Containers
+
+initSysctl:
+  enabled: false
+  image:
+    repository: bitnami/minideb
+    tag: latest
+    pullPolicy: IfNotPresent
+  command: []
+  mountHostSys: false
+
+initConfig:
+  resources: {}
+    # requests:
+    #   memory: 200Mi
+    #   cpu: 100m
+    # limits:
+    #   memory: 200Mi
+
+redis:
+  port: 6379
+  config:
+    ## http://download.redis.io/redis-stable/redis.conf
+    min-slaves-to-write: 1
+    min-slaves-max-lag: 5 # s
+    maxmemory: "0"
+    maxmemory-policy: "volatile-lru"
+    save: "900 1"
+    repl-diskless-sync: "yes"
+    rdbcompression: "yes"
+    rdbchecksum: "yes"
+
+  ## Custom redis.conf files used to override default settings. If this file is
+  ## specified then the redis.config above will be ignored.
+  # customConfig: |
+    ## Define configuration here
+
+  readinessProbe:
+    initialDelaySeconds: 15
+    periodSeconds: 5
+  livenessProbe:
+    initialDelaySeconds: 15
+    periodSeconds: 5
+
+  resources: {}
+
+sentinel:
+  port: 26379
+  quorum: 2
+  config:
+    ## http://download.redis.io/redis-stable/sentinel.conf
+    down-after-milliseconds: 10000
+    failover-timeout: 180000 # ms
+    parallel-syncs: 5
+
+  # customConfig: |
+
+  readinessProbe:
+    initialDelaySeconds: 15
+    periodSeconds: 5
+  livenessProbe:
+    initialDelaySeconds: 15
+    periodSeconds: 5
+
+  resources: {}
+
+metrics:
+  enabled: false
+  image:
+    repository: oliver006/redis_exporter
+    tag: v1.0.2
+    pullPolicy: IfNotPresent
+
+  extraEnvs: []
+  # - name: REDIS_EXPORTER_LOG_FORMAT
+  #   value: json
+
+  ## prometheus port & scrape path
+  port: 9121
+  path: /metrics
+
+  prometheusDiscovery: false
+
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 10s
+    prometheusNamespace: "monitor"
+    prometheusSelector: {}
+
+  livenessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 15
+    timeoutSeconds: 1
+
+  resources: {}

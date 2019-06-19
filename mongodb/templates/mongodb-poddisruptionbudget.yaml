@@ -1,0 +1,14 @@
+{{- if .Values.podDisruptionBudget -}}
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "mongodb.fullname" . }}
+  labels:
+    {{- include "mongodb.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "mongodb.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  {{- toYaml .Values.podDisruptionBudget | nindent 2 }}
+{{- end -}}

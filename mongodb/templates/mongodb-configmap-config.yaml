@@ -1,0 +1,112 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mongodb.fullname" . }}-config
+  labels:
+    {{- include "mongodb.labels" . | nindent 4 }}
+data:
+  mongod.conf: |
+    {{- toYaml .Values.mongodb.configmap | nindent 4 }}
+
+  {{- with .Values.mongodb.initStandalone }}
+  initMongodStandalone.js: |
+    {{- . | nindent 4 }}
+  {{- end }}
+
+  init.sh: |
+    #!/bin/bash
+    set -x
+
+    POD_IP=$(getent hosts "$POD_NAME.{{ include "mongodb.fullname" . }}" | awk '{ print $1 }')
+    if [ -z "$POD_IP" ]; then
+        "Could not resolve the ip for this pod"
+        exit 1
+    fi
+
+    cp -f /readonly-config/mongod.conf /data/configdb/mongod.conf
+    {{- if .Values.auth.enabled }}
+    cp -f /readonly-key/key.txt /data/configdb/key.txt
+    chmod 600 /data/configdb/key.txt
+    {{- end }}
+
+    THE_PID=
+    INIT_PORT={{ .Values.mongodb.initPort }}
+    LCAL_HOST="localhost:$INIT_PORT"
+
+    waiting_mongo() {
+        local command="db.adminCommand('ping').ok"
+        until [[ $(mongo admin --host "$LCAL_HOST" --quiet --eval "$command") == "1" ]]; do
+            sleep 1
+            if (! ps "$THE_PID" &>/dev/null); then
+                echo "mongod shutdown unexpectedly"
+                exit 1
+            fi
+            echo "Retrying waiting"
+        done
+    }
+
+    shutdown_mongo() {
+        local command="db.shutdownServer({force: true})"
+        echo "Shutting down MongoDB (force: true)..."
+        {{- if .Values.auth.enabled }}
+        if (! mongo admin --host "$LCAL_HOST" -u "$ADMIN_USER" -p "$ADMIN_PASSWORD" --eval "$command"); then
+        {{- else }}
+        if (! mongo admin --host "$LCAL_HOST" --eval "$command"); then
+        {{- end }}
+          echo "db.shutdownServer() failed, sending the terminate signal"
+          kill -TERM "$THE_PID"
+        fi
+    }
+
+    run_init_js() {
+        if [ ! -f /readonly-config/initMongodStandalone.js ]; then
+            echo "Skipping init mongod standalone script"
+            return 0
+        elif [ -z "$(ls -1A /data/db)" ]; then
+            echo "mongod standalone script currently not supported on initial install"
+            return 0
+        fi
+
+        echo "Starting a MongoDB instance as standalone for init-js..."
+        {{- if .Values.auth.enabled }}
+        mongod --config /data/configdb/mongod.conf "--auth" "--keyFile=/data/configdb/key.txt" \
+               --dbpath=/data/db  --port "$INIT_PORT" --bind_ip=0.0.0.0 &
+        {{- else }}
+        mongod --config /data/configdb/mongod.conf \
+               --dbpath=/data/db  --port "$INIT_PORT" --bind_ip=0.0.0.0 &
+        {{- end }}
+        THE_PID=$!
+        echo "Waiting for MongoDB to be ready..."
+        waiting_mongo
+        echo "Running init js script on standalone mongod"
+        {{- if .Values.auth.enabled }}
+        mongo admin --host "$LCAL_HOST" -u "$ADMIN_USER" -p "$ADMIN_PASSWORD" /readonly-config/initMongodStandalone.js
+        {{- else }}
+        mongo admin --host "$LCAL_HOST" /readonly-config/initMongodStandalone.js
+        {{- end }}
+        shutdown_mongo
+    }
+    run_init_js
+
+    {{- if .Values.auth.enabled }}
+
+    init_root_auth() {
+        if [ -n "$(ls -1A /data/db)" ]; then
+            echo "Skipping init mongod auth"
+            return 0
+        fi
+
+        echo "Starting a MongoDB instance as standalone for init-auth..."
+        mongod --dbpath=/data/db  --port "$INIT_PORT" --bind_ip=127.0.0.1 &
+        THE_PID=$!
+        echo "Waiting for MongoDB to be ready..."
+        waiting_mongo
+        echo "Init auth on standalone mongod"
+        mongo admin --host "$LCAL_HOST" --eval "db.createUser({user: '$ADMIN_USER', pwd: '$ADMIN_PASSWORD', roles: [{role: 'root', db: 'admin'}]})"
+        shutdown_mongo
+    }
+    init_root_auth
+    {{- end }}
+
+    echo "Ready..."
+    exit 0

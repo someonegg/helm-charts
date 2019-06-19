@@ -1,0 +1,54 @@
+{{- if not .Values.manualMode -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "mongodb.fullname" . }}-bootstrap
+  labels:
+    {{- include "mongodb.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": "post-install,post-upgrade,post-rollback"
+    "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: job-bootstrap
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - bash
+        args:
+        - /readonly-config/bootstrap.sh
+        {{- if .Values.auth.enabled }}
+        env:
+        - name: ADMIN_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "mongodb.adminSecret" . }}
+              key: user
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "mongodb.adminSecret" . }}
+              key: password
+        - name: METRICS_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "mongodb.metricsSecret" . }}
+              key: user
+        - name: METRICS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "mongodb.metricsSecret" . }}
+              key: password
+        {{- end }}
+        volumeMounts:
+        - name: bootstrap
+          mountPath: /readonly-config
+          readOnly: true
+      volumes:
+      - name: bootstrap
+        configMap:
+          name: {{ include "mongodb.fullname" . }}-bootstrap
+{{- end -}}
