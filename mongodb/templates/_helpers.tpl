@@ -101,7 +101,7 @@ Get the announce address.
 {{- $replicas := int .Values.replicas -}}
 {{- $dbport := int .Values.mongodb.port -}}
 {{- range $i := until $replicas -}}
-{{- if gt $i 0 }},{{ end -}}
+{{- if gt $i 0 -}},{{- end -}}
 {{ $fullName }}-{{ $i }}.{{ $suffixFQDN }}:{{ $dbport }}
 {{- end -}}
 {{- end -}}

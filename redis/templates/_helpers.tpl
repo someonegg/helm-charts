@@ -66,7 +66,7 @@ Get the announce address.
 {{- $dbport := int .Values.sentinel.port -}}
 {{- $root := . -}}
 {{- range $i := until $replicas -}}
-{{- if gt $i 0 }},{{ end -}}
+{{- if gt $i 0 -}},{{- end -}}
 {{- include "redis.fullname" $root -}}-announce-{{ $i }}.{{ $root.Release.Namespace }}.svc:{{ $dbport }}
 {{- end -}}
 {{- end -}}
