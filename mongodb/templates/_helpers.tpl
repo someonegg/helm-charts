@@ -69,7 +69,6 @@ Get the name for the metrics secret.
 {{- end -}}
 {{- end -}}
 
-
 {{/*
 Get the name for the key secret.
 */}}
