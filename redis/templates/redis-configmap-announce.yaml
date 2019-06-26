@@ -6,5 +6,5 @@ metadata:
   labels:
     {{- include "redis.labels" . | nindent 4 }}
 data:
-  sentinel.addr: {{ include "redis.announceAddress" . | quote }}
+  sentinel: {{ include "redis.announceAddress" . | quote }}
 {{- end -}}

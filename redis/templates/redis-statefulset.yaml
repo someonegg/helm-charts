@@ -195,8 +195,8 @@ spec:
         image: {{ .Values.metrics.image.repository }}:{{ .Values.metrics.image.tag }}
         imagePullPolicy: {{ .Values.metrics.image.pullPolicy }}
         args:
-        -  --web.telemetry-path={{ .Values.metrics.path }}
-        -  --web.listen-address=:{{ .Values.metrics.port }}
+        - --web.telemetry-path={{ .Values.metrics.path }}
+        - --web.listen-address=:{{ .Values.metrics.port }}
         env:
         - name: REDIS_ADDR
           value: redis://localhost:{{ .Values.redis.port }}

@@ -70,10 +70,10 @@ data:
         echo "Starting a MongoDB instance as standalone for init-js..."
         {{- if .Values.auth.enabled }}
         mongod --config /data/configdb/mongod.conf "--auth" "--keyFile=/data/configdb/key.txt" \
-               --dbpath=/data/db  --port "$INIT_PORT" --bind_ip=0.0.0.0 &
+               --dbpath=/data/db --port "$INIT_PORT" --bind_ip=0.0.0.0 &
         {{- else }}
         mongod --config /data/configdb/mongod.conf \
-               --dbpath=/data/db  --port "$INIT_PORT" --bind_ip=0.0.0.0 &
+               --dbpath=/data/db --port "$INIT_PORT" --bind_ip=0.0.0.0 &
         {{- end }}
         THE_PID=$!
         echo "Waiting for MongoDB to be ready..."
@@ -97,7 +97,7 @@ data:
         fi
 
         echo "Starting a MongoDB instance as standalone for init-auth..."
-        mongod --dbpath=/data/db  --port "$INIT_PORT" --bind_ip=127.0.0.1 &
+        mongod --dbpath=/data/db --port "$INIT_PORT" --bind_ip=127.0.0.1 &
         THE_PID=$!
         echo "Waiting for MongoDB to be ready..."
         waiting_mongo

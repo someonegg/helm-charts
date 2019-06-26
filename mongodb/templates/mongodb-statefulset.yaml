@@ -195,7 +195,7 @@ spec:
         {{- end }}
         ports:
         - name: metrics
-          containerPort: {{ .Values.metrics.port  }}
+          containerPort: {{ .Values.metrics.port }}
         livenessProbe:
           exec:
             command:

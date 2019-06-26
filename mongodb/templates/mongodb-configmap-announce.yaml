@@ -5,4 +5,4 @@ metadata:
   labels:
     {{- include "mongodb.labels" . | nindent 4 }}
 data:
-  mongodb.addr: {{ include "mongodb.announceAddress" . | quote }}
+  mongodb: {{ include "mongodb.announceAddress" . | quote }}
