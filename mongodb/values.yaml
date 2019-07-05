@@ -8,15 +8,18 @@ auth:
   enabled: false
   adminUser: admin
   adminPassword: QIEbsW7D
+  rwanyUser: rwany
+  rwanyPassword: MqfrfMiA
   metricsUser: metric
   metricsPassword: ZoEQD1qf
   key: |
     5sQGKYvjc8ov0OCqb3+Vf+LwnKuLZpwfCH2Ywgqzave56YfdBl4+ctahnHT0qiHj
     y/ZYv/GBWVhZioNdqk+RUPlvjkgZQ0ViFAOmPRpCRc/bAG1XsrnfHL/v
 
-  # existingKeySecret:
   # existingAdminSecret:
+  # existingRwanySecret:
   # existingMetricsSecret:
+  # existingKeySecret:
 
 extraLabels: {}
 

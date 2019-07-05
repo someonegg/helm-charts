@@ -59,6 +59,17 @@ Get the name for the admin secret.
 {{- end -}}
 
 {{/*
+Get the name for the rwany secret.
+*/}}
+{{- define "mongodb.rwanySecret" -}}
+{{- if .Values.auth.existingRwanySecret -}}
+{{- .Values.auth.existingRwanySecret -}}
+{{- else -}}
+{{- include "mongodb.fullname" . -}}-rwany
+{{- end -}}
+{{- end -}}
+
+{{/*
 Get the name for the metrics secret.
 */}}
 {{- define "mongodb.metricsSecret" -}}

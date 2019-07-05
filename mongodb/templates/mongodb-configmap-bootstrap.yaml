@@ -55,6 +55,9 @@ data:
         local peer=""
         for peer in "${PEERS[@]}"; do
             master=$("${MONGOCLI[@]}" --host "$peer" --eval "rs.isMaster().primary")
+            if [[ $master =~ " " ]]; then
+                continue
+            fi
             if [ -n "$master" ]; then
                 echo -n "$master"
                 break
@@ -108,18 +111,31 @@ data:
         sleep 5
     done
 
-    {{- if and .Values.auth.enabled .Values.metrics.enabled }}
+    {{- if .Values.auth.enabled }}
 
-    init_metrics_auth() {
+    init_rsdb_auth() {
         local master=$(find_master)
-        until [ -n "$master" ]; do
-            sleep 5
-            master=$(find_master)
-        done
-        "${MONGOCLI[@]}" admin --host "$master" \
-            --eval "db.createUser({user: '$METRICS_USER', pwd: '$METRICS_PASSWORD', roles: [{role: 'clusterMonitor', db: 'admin'}, {role: 'read', db: 'local'}]})"
+        if [ -z "$master" ]; then
+            return 1
+        fi
+        local output=""
+        output=$( "${MONGOCLI[@]}" admin --host "$master" \
+            --eval "db.createUser({user: '$RWANY_USER', pwd: '$RWANY_PASSWORD', roles: ['readWriteAnyDatabase']})" )
+        if ! [[ $output =~ "Successfully added user" || $output =~ "already exists" ]]; then
+            return 2
+        fi
+        {{- if .Values.metrics.enabled }}
+        output=$( "${MONGOCLI[@]}" admin --host "$master" \
+            --eval "db.createUser({user: '$METRICS_USER', pwd: '$METRICS_PASSWORD', roles: [{role: 'clusterMonitor', db: 'admin'}, {role: 'read', db: 'local'}]})" )
+        if ! [[ $output =~ "Successfully added user" || $output =~ "already exists" ]]; then
+            return 3
+        fi
+        {{- end }}
+        return 0
     }
-    init_metrics_auth
+    until init_rsdb_auth; do
+        sleep 5
+    done
     {{- end }}
 
     echo "bootstrap done"
