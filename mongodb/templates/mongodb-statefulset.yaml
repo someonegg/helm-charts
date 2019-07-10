@@ -120,9 +120,7 @@ spec:
           readOnly: true
         {{- end }}
         - name: data
-          mountPath: /data/db
-        - name: configdb
-          mountPath: /data/configdb
+          mountPath: /data/store
         {{- with .Values.initConfig.resources }}
         resources:
           {{- toYaml . | nindent 10 }}
@@ -134,14 +132,14 @@ spec:
         command:
         - mongod
         args:
-        - --config=/data/configdb/mongod.conf
-        - --dbpath=/data/db
+        - --config=/data/store/conf/mongod.conf
+        - --dbpath=/data/store/db
         - --replSet={{ .Values.replicaSetName }}
         - --port={{ .Values.mongodb.port }}
         - --bind_ip=0.0.0.0
         {{- if .Values.auth.enabled }}
         - --auth
-        - --keyFile=/data/configdb/key.txt
+        - --keyFile=/data/store/conf/key.txt
         {{- end }}
         {{- with .Values.mongodb.extraEnvs }}
         env:
@@ -152,9 +150,7 @@ spec:
           containerPort: {{ .Values.mongodb.port }}
         volumeMounts:
         - name: data
-          mountPath: /data/db
-        - name: configdb
-          mountPath: /data/configdb
+          mountPath: /data/store
         readinessProbe:
           exec:
             command: [ "mongo", "--port", "{{ .Values.mongodb.port }}", "--eval", "db.adminCommand('ping')" ]
@@ -238,8 +234,6 @@ spec:
           defaultMode: 0400
           secretName: {{ include "mongodb.keySecret" . }}
       {{- end }}
-      - name: configdb
-        emptyDir: {}
   {{- if not .Values.persistentVolume.enabled }}
       - name: data
         emptyDir: {}

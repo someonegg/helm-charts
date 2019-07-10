@@ -23,10 +23,15 @@ data:
         exit 1
     fi
 
-    cp -f /readonly-config/mongod.conf /data/configdb/mongod.conf
+    echo "Initializing..."
+
+    mkdir -p /data/store/conf
+    mkdir -p /data/store/db
+
+    cp -f /readonly-config/mongod.conf /data/store/conf/mongod.conf
     {{- if .Values.auth.enabled }}
-    cp -f /readonly-key/key.txt /data/configdb/key.txt
-    chmod 600 /data/configdb/key.txt
+    cp -f /readonly-key/key.txt /data/store/conf/key.txt
+    chmod 600 /data/store/conf/key.txt
     {{- end }}
 
     THE_PID=
@@ -62,18 +67,18 @@ data:
         if [ ! -f /readonly-config/initMongodStandalone.js ]; then
             echo "Skipping init mongod standalone script"
             return 0
-        elif [ -z "$(ls -1A /data/db)" ]; then
+        elif [ ! -f /data/store/conf/done ]; then
             echo "mongod standalone script currently not supported on initial install"
             return 0
         fi
 
         echo "Starting a MongoDB instance as standalone for init-js..."
         {{- if .Values.auth.enabled }}
-        mongod --config /data/configdb/mongod.conf "--auth" "--keyFile=/data/configdb/key.txt" \
-               --dbpath=/data/db --port "$INIT_PORT" --bind_ip=0.0.0.0 &
+        mongod --config /data/store/conf/mongod.conf --auth --keyFile=/data/store/conf/key.txt \
+               --dbpath=/data/store/db --port "$INIT_PORT" --bind_ip=0.0.0.0 &
         {{- else }}
-        mongod --config /data/configdb/mongod.conf \
-               --dbpath=/data/db --port "$INIT_PORT" --bind_ip=0.0.0.0 &
+        mongod --config /data/store/conf/mongod.conf \
+               --dbpath=/data/store/db --port "$INIT_PORT" --bind_ip=0.0.0.0 &
         {{- end }}
         THE_PID=$!
         echo "Waiting for MongoDB to be ready..."
@@ -91,13 +96,13 @@ data:
     {{- if .Values.auth.enabled }}
 
     init_root_auth() {
-        if [ -n "$(ls -1A /data/db)" ]; then
+        if [ -f /data/store/conf/done ]; then
             echo "Skipping init mongod auth"
             return 0
         fi
 
         echo "Starting a MongoDB instance as standalone for init-auth..."
-        mongod --dbpath=/data/db --port "$INIT_PORT" --bind_ip=127.0.0.1 &
+        mongod --dbpath=/data/store/db --port "$INIT_PORT" --bind_ip=127.0.0.1 &
         THE_PID=$!
         echo "Waiting for MongoDB to be ready..."
         waiting_mongo
@@ -108,5 +113,6 @@ data:
     init_root_auth
     {{- end }}
 
+    echo "Done" > /data/store/conf/done
     echo "Ready..."
     exit 0

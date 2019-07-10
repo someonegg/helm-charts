@@ -117,7 +117,7 @@ spec:
           mountPath: /readonly-config
           readOnly: true
         - name: data
-          mountPath: /data
+          mountPath: /data/store
         {{- with .Values.initConfig.resources }}
         resources:
           {{- toYaml . | nindent 10 }}
@@ -129,7 +129,7 @@ spec:
         command:
         - redis-server
         args:
-        - /data/conf/redis.conf
+        - /data/store/conf/redis.conf
         {{- if .Values.auth.enabled }}
         env:
         - name: AUTH
@@ -142,10 +142,10 @@ spec:
         - name: redis
           containerPort: {{ .Values.redis.port }}
         volumeMounts:
-        - mountPath: /data
-          name: data
-        - mountPath: /probe
-          name: probe
+        - name: data
+          mountPath: /data/store
+        - name: probe
+          mountPath: /probe
         readinessProbe:
           exec:
             command: [ "sh", "/probe/readiness.sh", "{{ .Values.redis.port }}" ]
@@ -168,7 +168,7 @@ spec:
         command:
         - redis-sentinel
         args:
-        - /data/conf/sentinel.conf
+        - /data/store/conf/sentinel.conf
         {{- if .Values.auth.enabled }}
         env:
         - name: AUTH
@@ -181,10 +181,10 @@ spec:
         - name: sentinel
           containerPort: {{ .Values.sentinel.port }}
         volumeMounts:
-        - mountPath: /data
-          name: data
-        - mountPath: /probe
-          name: probe
+        - name: data
+          mountPath: /data/store
+        - name: probe
+          mountPath: /probe
         readinessProbe:
           exec:
             command: [ "sh", "/probe/readiness.sh", "{{ .Values.sentinel.port }}" ]

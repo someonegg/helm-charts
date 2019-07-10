@@ -9,7 +9,7 @@ data:
     {{- if .Values.redis.customConfig }}
     {{- .Values.redis.customConfig | nindent 4 }}
     {{- else }}
-    dir "/data"
+    dir "/data/store/db"
     port {{ .Values.redis.port }}
     {{- range $key, $value := .Values.redis.config }}
     {{ $key }} {{ $value }}
@@ -24,7 +24,7 @@ data:
     {{- if .Values.sentinel.customConfig }}
     {{- .Values.sentinel.customConfig | nindent 4 }}
     {{- else }}
-    dir "/data"
+    dir "/data/store/db"
     port {{ .Values.sentinel.port }}
     {{- $root := . -}}
     {{- range $key, $value := .Values.sentinel.config }}
@@ -42,9 +42,9 @@ data:
     INDEX="${POD_NAME##*-}"
     POD_PREFIX="${POD_NAME%-*}"
     SERVICE={{ include "redis.fullname" . }}
-    REDIS_CONF=/data/conf/redis.conf
+    REDIS_CONF=/data/store/conf/redis.conf
     REDIS_PORT={{ .Values.redis.port }}
-    SENTINEL_CONF=/data/conf/sentinel.conf
+    SENTINEL_CONF=/data/store/conf/sentinel.conf
     SENTINEL_PORT={{ .Values.sentinel.port }}
     MASTER_GROUP={{ .Values.masterGroupName }}
     QUORUM={{ .Values.sentinel.quorum }}
@@ -100,7 +100,7 @@ data:
 
     {{- if .Values.manualMode }}
 
-    if [ -f /data/conf/done ]; then
+    if [ -f /data/store/conf/done ]; then
         echo "Skipping by manual mode"
         exit 0
     fi
@@ -108,7 +108,8 @@ data:
 
     echo "Initializing..."
 
-    mkdir -p /data/conf/
+    mkdir -p /data/store/conf
+    mkdir -p /data/store/db
 
     copy_config
     redis_init
@@ -174,6 +175,6 @@ data:
         sed -i "s/replace-default-auth/${ESCAPED_AUTH}/" "$REDIS_CONF" "$SENTINEL_CONF"
     fi
 
-    echo "Done" > /data/conf/done
+    echo "Done" > /data/store/conf/done
     echo "Ready..."
     exit 0
