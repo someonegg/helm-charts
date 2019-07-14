@@ -3,7 +3,6 @@
 {{- $suffixFQDN := include "mongodb.suffixFQDN" . -}}
 {{- $replicas := int .Values.replicas -}}
 {{- $dbport := int .Values.mongodb.port -}}
-{{- $root := . -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -30,7 +29,7 @@ data:
         echo "do install..."
         local master="{{ $fullName }}-0.{{ $suffixFQDN }}:{{ $dbport }}"
         local initiate_js="rs.initiate({ \
-          _id: '{{ $root.Values.replicaSetName }}', \
+          _id: '{{ .Values.replicaSetName }}', \
           members: [
             {{- range $i := until $replicas -}}
             {{- if gt $i 0 -}} , {{- end -}}

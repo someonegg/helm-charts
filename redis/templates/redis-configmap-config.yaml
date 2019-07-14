@@ -26,9 +26,8 @@ data:
     {{- else }}
     dir "/data/store/db"
     port {{ .Values.sentinel.port }}
-    {{- $root := . -}}
     {{- range $key, $value := .Values.sentinel.config }}
-    sentinel {{ $key }} {{ $root.Values.masterGroupName }} {{ $value }}
+    sentinel {{ $key }} {{ $.Values.masterGroupName }} {{ $value }}
     {{- end }}
     {{- if .Values.auth.enabled }}
     sentinel auth-pass {{ .Values.masterGroupName }} replace-default-auth

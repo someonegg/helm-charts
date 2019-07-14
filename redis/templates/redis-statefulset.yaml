@@ -24,8 +24,8 @@ spec:
         app.kubernetes.io/name: {{ include "redis.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
       annotations:
-        checksum/configmap-config: {{ include (print $.Template.BasePath "/redis-configmap-config.yaml") . | sha256sum }}
-        checksum/configmap-probe: {{ include (print $.Template.BasePath "/redis-configmap-probe.yaml") . | sha256sum }}
+        checksum/configmap-config: {{ include (print .Template.BasePath "/redis-configmap-config.yaml") . | sha256sum }}
+        checksum/configmap-probe: {{ include (print .Template.BasePath "/redis-configmap-probe.yaml") . | sha256sum }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

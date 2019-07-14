@@ -1,19 +1,18 @@
 {{- if not .Values.hostNetwork -}}
 {{- $fullName := include "redis.fullname" . -}}
 {{- $replicas := int .Values.replicas -}}
-{{- $root := . -}}
-
 {{- range $i := until $replicas }}
+{{- with $ }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: {{ $fullName }}-announce-{{ $i }}
   labels:
-    {{- include "redis.labels" $root | nindent 4 }}
+    {{- include "redis.labels" . | nindent 4 }}
   annotations:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
-    {{- with $root.Values.svcAnnotations }}
+    {{- with .Values.svcAnnotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
@@ -21,17 +20,17 @@ spec:
   type: ClusterIP
   ports:
   - name: redis
-    port: {{ $root.Values.redis.port }}
+    port: {{ .Values.redis.port }}
     protocol: TCP
     targetPort: redis
   - name: sentinel
-    port: {{ $root.Values.sentinel.port }}
+    port: {{ .Values.sentinel.port }}
     protocol: TCP
     targetPort: sentinel
   selector:
-    app.kubernetes.io/name: {{ include "redis.name" $root }}
-    app.kubernetes.io/instance: {{ $root.Release.Name }}
+    app.kubernetes.io/name: {{ include "redis.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
     statefulset.kubernetes.io/pod-name: {{ $fullName }}-{{ $i }}
 {{- end }}
-
+{{- end }}
 {{- end -}}

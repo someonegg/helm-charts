@@ -65,9 +65,10 @@ Get the announce address.
 {{- define "redis.announceAddress" -}}
 {{- $replicas := int .Values.replicas -}}
 {{- $dbport := int .Values.sentinel.port -}}
-{{- $root := . -}}
 {{- range $i := until $replicas -}}
+{{- with $ -}}
 {{- if gt $i 0 -}},{{- end -}}
-{{- include "redis.fullname" $root -}}-announce-{{ $i }}.{{ $root.Release.Namespace }}.svc:{{ $dbport }}
+{{- include "redis.fullname" . -}}-announce-{{ $i }}.{{ .Release.Namespace }}.svc:{{ $dbport }}
+{{- end -}}
 {{- end -}}
 {{- end -}}
