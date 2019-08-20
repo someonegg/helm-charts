@@ -50,15 +50,7 @@ spec:
         {{- tpl . $ | nindent 8 }}
       {{- else }}
       affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchLabels:
-                  app.kubernetes.io/name: {{ include "mongodb.name" . }}
-                  app.kubernetes.io/instance: {{ .Release.Name }}
-              topologyKey: "kubernetes.io/hostname"
+        {{- include "mongodb.podDefaultAffinity" . | nindent 8 }}
       {{- end }}
       {{- with .Values.securityContext }}
       securityContext:

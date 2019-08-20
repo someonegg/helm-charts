@@ -50,6 +50,28 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 {{- end -}}
 
+{{- define "redis.podDefaultAffinity" -}}
+{{- if .Values.podAntiAffinity.hard -}}
+podAntiAffinity:
+  requiredDuringSchedulingIgnoredDuringExecution:
+  - labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: {{ include "redis.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    topologyKey: {{ default "kubernetes.io/hostname" .Values.podAntiAffinity.topologyKey | quote }}
+{{- else -}}
+podAntiAffinity:
+  preferredDuringSchedulingIgnoredDuringExecution:
+  - weight: 50
+    podAffinityTerm:
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/name: {{ include "redis.name" . }}
+          app.kubernetes.io/instance: {{ .Release.Name }}
+      topologyKey: {{ default "kubernetes.io/hostname" .Values.podAntiAffinity.topologyKey | quote }}
+{{- end -}}
+{{- end -}}
+
 {{/*
 Create the name for the auth secret.
 */}}

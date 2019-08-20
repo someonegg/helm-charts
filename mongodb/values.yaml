@@ -63,6 +63,10 @@ tolerations: []
 # affinity: |
   ## go tpl
 
+podAntiAffinity:
+  hard: false
+  # topologyKey: kubernetes.io/hostname
+
 # schedulerName: stork
 
 ## Containers
@@ -137,7 +141,7 @@ metrics:
     enabled: true
     interval: 30s
     scrapeTimeout: 10s
-    prometheusNamespace: "monitor"
+    # prometheusNamespace: "monitoring"
     prometheusSelector: {}
 
   livenessProbe:

@@ -1,5 +1,4 @@
-{{- if .Values.metrics.enabled -}}
-{{- if and (.Values.metrics.serviceMonitor.enabled) (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1") -}}
+{{- if and .Values.metrics.enabled .Values.metrics.serviceMonitor.enabled -}}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -25,5 +24,4 @@ spec:
     matchLabels:
       app.kubernetes.io/name: {{ include "mongodb.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
-{{- end -}}
 {{- end -}}
