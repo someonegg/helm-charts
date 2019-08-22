@@ -226,30 +226,30 @@ spec:
           defaultMode: 0400
           secretName: {{ include "mongodb.keySecret" . }}
       {{- end }}
-  {{- if not .Values.persistentVolume.enabled }}
+  {{- if not .Values.persistent.enabled }}
       - name: data
         emptyDir: {}
   {{- else }}
   volumeClaimTemplates:
   - metadata:
       name: data
-      {{- with .Values.persistentVolume.annotations }}
+      {{- with .Values.persistent.annotations }}
       annotations:
       {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
-      {{- with .Values.persistentVolume.accessModes }}
+      {{- with .Values.persistent.accessModes }}
       accessModes:
       {{- toYaml . | nindent 6 }}
       {{- end }}
       resources:
         requests:
-          storage: {{ .Values.persistentVolume.size | quote }}
-      {{- if .Values.persistentVolume.storageClass }}
-      {{- if (eq "-" .Values.persistentVolume.storageClass) }}
+          storage: {{ .Values.persistent.size | quote }}
+      {{- if .Values.persistent.storageClass }}
+      {{- if (eq "-" .Values.persistent.storageClass) }}
       storageClassName: ""
       {{- else }}
-      storageClassName: "{{ .Values.persistentVolume.storageClass }}"
+      storageClassName: "{{ .Values.persistent.storageClass }}"
       {{- end }}
       {{- end }}
   {{- end }}

@@ -18,7 +18,7 @@ image:
   tag: 4.0.14
   pullPolicy: IfNotPresent
 
-persistentVolume:
+persistent:
   enabled: false
   # storageClass: "-"
   accessModes:
