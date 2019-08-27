@@ -30,7 +30,7 @@ image:
   tag: 3.6.13
   pullPolicy: IfNotPresent
 
-persistent:
+persistence:
   enabled: false
   # storageClass: "-"
   accessModes:
@@ -106,7 +106,7 @@ mongodb:
   #  db.my_users.createIndex({email: 1})
 
   readinessProbe:
-    initialDelaySeconds: 5
+    initialDelaySeconds: 15
     timeoutSeconds: 1
     failureThreshold: 3
     periodSeconds: 10

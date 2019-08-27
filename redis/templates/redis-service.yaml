@@ -23,6 +23,7 @@ spec:
   {{- if .Values.metrics.enabled }}
   - name: metrics
     port: {{ .Values.metrics.port }}
+    protocol: TCP
     targetPort: metrics
   {{- end }}
   selector:

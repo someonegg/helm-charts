@@ -130,7 +130,7 @@ Get the FQDN suffix.
 {{/*
 Get the announce address.
 */}}
-{{- define "mongodb.announceAddress" -}}
+{{- define "mongodb.announce" -}}
 {{- $fullName := include "mongodb.fullname" . -}}
 {{- $suffixFQDN := include "mongodb.suffixFQDN" . -}}
 {{- $replicas := int .Values.replicas -}}

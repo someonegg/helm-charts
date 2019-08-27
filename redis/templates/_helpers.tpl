@@ -86,7 +86,7 @@ Create the name for the auth secret.
 {{/*
 Get the announce address.
 */}}
-{{- define "redis.announceAddress" -}}
+{{- define "redis.announce" -}}
 {{- $replicas := int .Values.replicas -}}
 {{- $dbport := int .Values.sentinel.port -}}
 {{- range $i := until $replicas -}}

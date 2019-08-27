@@ -18,7 +18,7 @@ image:
   tag: 4.0.14
   pullPolicy: IfNotPresent
 
-persistent:
+persistence:
   enabled: false
   # storageClass: "-"
   accessModes:
@@ -98,7 +98,7 @@ redis:
     initialDelaySeconds: 15
     periodSeconds: 5
   livenessProbe:
-    initialDelaySeconds: 15
+    initialDelaySeconds: 30
     periodSeconds: 5
 
   resources: {}
@@ -116,10 +116,10 @@ sentinel:
 
   readinessProbe:
     initialDelaySeconds: 15
-    periodSeconds: 5
+    periodSeconds: 10
   livenessProbe:
-    initialDelaySeconds: 15
-    periodSeconds: 5
+    initialDelaySeconds: 30
+    periodSeconds: 10
 
   resources: {}
 
