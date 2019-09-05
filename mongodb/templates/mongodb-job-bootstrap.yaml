@@ -20,17 +20,24 @@ spec:
         - bash
         args:
         - /readonly-config/bootstrap.sh
-        {{- if .Values.auth.enabled }}
         env:
-        - name: ADMIN_USER
+        {{- if (eq "shardsvr" .Values.clusterRole) }}
+        - name: ANNOUNCE_MONGOS
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.shardingAnnounce }}
+              key: mongos
+        {{- end }}
+        {{- if .Values.auth.enabled }}
+        - name: CLUSTER_USER
           valueFrom:
             secretKeyRef:
-              name: {{ include "mongodb.adminSecret" . }}
+              name: {{ include "mongodb.clusterSecret" . }}
               key: user
-        - name: ADMIN_PASSWORD
+        - name: CLUSTER_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ include "mongodb.adminSecret" . }}
+              name: {{ include "mongodb.clusterSecret" . }}
               key: password
         {{- end }}
         volumeMounts:

@@ -1,26 +1,12 @@
-## Default values for mongodb.
+## Default values for mongos.
 
 replicas: 3
-replicaSetName: rs0
-clusterRole: none
 shardingAnnounce: sharding-announce
 manualMode: false
 
 auth:
   enabled: false
-  adminUser: admin # root
-  adminPassword: QIEbsW7D
-  # existingAdminSecret:
-
-  clusterUser: cluster # clusterAdmin
-  clusterPassword: 5w0wt7Ds
-  # existingClusterSecret:
-
-  rwanyUser: rwany # readWriteAnyDatabase
-  rwanyPassword: MqfrfMiA
-  # existingRwanySecret:
-
-  metricsUser: metric # clusterMonitor ...
+  metricsUser: metric
   metricsPassword: ZoEQD1qf
   # existingMetricsSecret:
 
@@ -37,14 +23,6 @@ image:
   repository: mongo
   tag: 3.6.13
   pullPolicy: IfNotPresent
-
-persistence:
-  enabled: false
-  # storageClass: "-"
-  accessModes:
-  - ReadWriteOnce
-  size: 10Gi
-  annotations: {}
 
 podDisruptionBudget: {}
   # maxUnavailable: 1
@@ -96,8 +74,9 @@ initConfig:
     # limits:
     #   memory: 200Mi
 
-mongodb:
+mongos:
   port: 27017
+  initPort: 27018
   # suffixFQDN: servers.xxx.com
 
   configmap: {}
@@ -106,25 +85,12 @@ mongodb:
   # - name: TCMALLOC_AGGRESSIVE_DECOMMIT
   #   value: "true"
 
-  initPort: 27018
-  ## This is the recommended way to create indexes on replicasets.
-  ## ref: https://docs.mongodb.com/manual/tutorial/build-indexes-on-replica-sets/
-  # initStandalone: |
-  #  db = db.getSiblingDB("mydb")
-  #  db.my_users.createIndex({email: 1})
-
   readinessProbe:
     initialDelaySeconds: 15
-    timeoutSeconds: 1
-    failureThreshold: 3
     periodSeconds: 10
-    successThreshold: 1
   livenessProbe:
     initialDelaySeconds: 30
-    timeoutSeconds: 5
-    failureThreshold: 3
     periodSeconds: 10
-    successThreshold: 1
 
   resources: {}
 

@@ -1,9 +1,9 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "mongodb.fullname" . }}
+  name: {{ include "mongos.fullname" . }}
   labels:
-    {{- include "mongodb.labels" . | nindent 4 }}
+    {{- include "mongos.labels" . | nindent 4 }}
   {{- with .Values.podAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -11,9 +11,9 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "mongodb.name" . }}
+      app.kubernetes.io/name: {{ include "mongos.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
-  serviceName: {{ include "mongodb.fullname" . }}
+  serviceName: {{ include "mongos.fullname" . }}
   replicas: {{ .Values.replicas }}
   podManagementPolicy: OrderedReady
   updateStrategy:
@@ -21,10 +21,10 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "mongodb.name" . }}
+        app.kubernetes.io/name: {{ include "mongos.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
       annotations:
-        checksum/configmap-config: {{ include (print .Template.BasePath "/mongodb-configmap-config.yaml") . | sha256sum }}
+        checksum/configmap-config: {{ include (print .Template.BasePath "/mongos-configmap-config.yaml") . | sha256sum }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -50,7 +50,7 @@ spec:
         {{- tpl . $ | nindent 8 }}
       {{- else }}
       affinity:
-        {{- include "mongodb.podDefaultAffinity" . | nindent 8 }}
+        {{- include "mongos.podDefaultAffinity" . | nindent 8 }}
       {{- end }}
       {{- with .Values.securityContext }}
       securityContext:
@@ -82,58 +82,16 @@ spec:
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         command:
-        - bash
+        - sh
         args:
-        - /readonly-config/init.sh
-        env:
-        - name: POD_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.name
-        {{- if .Values.auth.enabled }}
-        - name: ADMIN_USER
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "mongodb.adminSecret" . }}
-              key: user
-        - name: ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "mongodb.adminSecret" . }}
-              key: password
-        - name: CLUSTER_USER
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "mongodb.clusterSecret" . }}
-              key: user
-        - name: CLUSTER_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "mongodb.clusterSecret" . }}
-              key: password
-        - name: RWANY_USER
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "mongodb.rwanySecret" . }}
-              key: user
-        - name: RWANY_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "mongodb.rwanySecret" . }}
-              key: password
-        {{- if .Values.metrics.enabled }}
-        - name: METRICS_USER
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "mongodb.metricsSecret" . }}
-              key: user
-        - name: METRICS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "mongodb.metricsSecret" . }}
-              key: password
-        {{- end }}
-        {{- end }}
+        - -c
+        - |
+          mkdir -p /data/store/conf
+          cp -f /readonly-config/mongod.conf /data/store/conf/mongod.conf
+          {{- if .Values.auth.enabled }}
+          cp -f /readonly-key/key.txt /data/store/conf/key.txt
+          chmod 600 /data/store/conf/key.txt
+          {{- end }}
         volumeMounts:
         - name: config
           mountPath: /readonly-config
@@ -149,49 +107,50 @@ spec:
           {{- toYaml . | nindent 10 }}
         {{- end }}
       containers:
-      - name: mongodb
+      - name: mongos
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         command:
-        - mongod
+        - sh
         args:
-        - --config=/data/store/conf/mongod.conf
-        - --dbpath=/data/store/db
-        {{- if (eq "configsvr" .Values.clusterRole) }}
-        - --configsvr
-        {{- else if (eq "shardsvr" .Values.clusterRole) }}
-        - --shardsvr
-        {{- end }}
-        - --replSet={{ .Values.replicaSetName }}
-        - --port={{ .Values.mongodb.port }}
-        - --bind_ip=0.0.0.0
-        {{- if .Values.auth.enabled }}
-        - --auth
-        - --keyFile=/data/store/conf/key.txt
-        {{- end }}
-        {{- with .Values.mongodb.extraEnvs }}
+        - -c
+        - |
+          mongos \
+          --config=/data/store/conf/mongod.conf \
+          --configdb=$ANNOUNCE_CONFIGDB \
+          {{- if .Values.auth.enabled }}
+          --keyFile=/data/store/conf/key.txt \
+          {{- end }}
+          --bind_ip=0.0.0.0 \
+          --port={{ .Values.mongos.port }}
         env:
+        - name: ANNOUNCE_CONFIGDB
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.shardingAnnounce }}
+              key: configsvr
+        {{- with .Values.mongos.extraEnvs }}
           {{- toYaml . | nindent 10 }}
         {{- end }}
         ports:
-        - name: mongodb
-          containerPort: {{ .Values.mongodb.port }}
+        - name: mongos
+          containerPort: {{ .Values.mongos.port }}
         volumeMounts:
         - name: data
           mountPath: /data/store
         readinessProbe:
           exec:
-            command: [ "mongo", "--port", "{{ .Values.mongodb.port }}", "--eval", "db.adminCommand('ping')" ]
-          {{- with .Values.mongodb.readinessProbe }}
+            command: [ "mongo", "--port", "{{ .Values.mongos.port }}", "--eval", "db.adminCommand('ping')" ]
+          {{- with .Values.mongos.readinessProbe }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
         livenessProbe:
           exec:
-            command: [ "mongo", "--port", "{{ .Values.mongodb.port }}", "--eval", "db.adminCommand('ping')" ]
-          {{- with .Values.mongodb.livenessProbe }}
+            command: [ "mongo", "--port", "{{ .Values.mongos.port }}", "--eval", "db.adminCommand('ping')" ]
+          {{- with .Values.mongos.livenessProbe }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
-        {{- with .Values.mongodb.resources }}
+        {{- with .Values.mongos.resources }}
         resources:
           {{- toYaml . | nindent 10 }}
         {{- end }}
@@ -206,9 +165,9 @@ spec:
         - |
           /bin/mongodb_exporter \
           {{- if .Values.auth.enabled }}
-          --mongodb.uri mongodb://$METRICS_USER:$METRICS_PASSWORD@localhost:{{ .Values.mongodb.port }} \
+          --mongodb.uri mongodb://$METRICS_USER:$METRICS_PASSWORD@localhost:{{ .Values.mongos.port }} \
           {{- else }}
-          --mongodb.uri mongodb://localhost:{{ .Values.mongodb.port }} \
+          --mongodb.uri mongodb://localhost:{{ .Values.mongos.port }} \
           {{- end }}
           --web.metrics-path={{ .Values.metrics.path }} \
           --web.listen-address=:{{ .Values.metrics.port }} \
@@ -220,12 +179,12 @@ spec:
         - name: METRICS_USER
           valueFrom:
             secretKeyRef:
-              name: {{ include "mongodb.metricsSecret" . }}
+              name: {{ include "mongos.metricsSecret" . }}
               key: user
         - name: METRICS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ include "mongodb.metricsSecret" . }}
+              name: {{ include "mongos.metricsSecret" . }}
               key: password
         {{- end }}
         ports:
@@ -239,9 +198,9 @@ spec:
             - |
               /bin/mongodb_exporter \
               {{- if .Values.auth.enabled }}
-              --mongodb.uri mongodb://$METRICS_USER:$METRICS_PASSWORD@localhost:{{ .Values.mongodb.port }} \
+              --mongodb.uri mongodb://$METRICS_USER:$METRICS_PASSWORD@localhost:{{ .Values.mongos.port }} \
               {{- else }}
-              --mongodb.uri mongodb://localhost:{{ .Values.mongodb.port }} \
+              --mongodb.uri mongodb://localhost:{{ .Values.mongos.port }} \
               {{- end }}
               --test
           {{- with .Values.metrics.livenessProbe }}
@@ -255,37 +214,12 @@ spec:
       volumes:
       - name: config
         configMap:
-          name: {{ include "mongodb.fullname" . }}-config
+          name: {{ include "mongos.fullname" . }}-config
       {{- if .Values.auth.enabled }}
       - name: key
         secret:
+          secretName: {{ include "mongos.keySecret" . }}
           defaultMode: 0400
-          secretName: {{ include "mongodb.keySecret" . }}
       {{- end }}
-  {{- if not .Values.persistence.enabled }}
       - name: data
         emptyDir: {}
-  {{- else }}
-  volumeClaimTemplates:
-  - metadata:
-      name: data
-      {{- with .Values.persistence.annotations }}
-      annotations:
-      {{- toYaml . | nindent 8 }}
-      {{- end }}
-    spec:
-      {{- with .Values.persistence.accessModes }}
-      accessModes:
-      {{- toYaml . | nindent 6 }}
-      {{- end }}
-      resources:
-        requests:
-          storage: {{ .Values.persistence.size | quote }}
-      {{- if .Values.persistence.storageClass }}
-      {{- if (eq "-" .Values.persistence.storageClass) }}
-      storageClassName: ""
-      {{- else }}
-      storageClassName: "{{ .Values.persistence.storageClass }}"
-      {{- end }}
-      {{- end }}
-  {{- end }}

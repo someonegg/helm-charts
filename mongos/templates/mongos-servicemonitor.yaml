@@ -1,0 +1,27 @@
+{{- if and .Values.metrics.enabled .Values.metrics.serviceMonitor.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "mongos.fullname" . }}
+  {{- with .Values.metrics.serviceMonitor.prometheusNamespace }}
+  namespace: {{ . }}
+  {{- end }}
+  labels:
+    {{- include "mongos.labels" . | nindent 4 }}
+    {{- with .Values.metrics.serviceMonitor.prometheusSelector }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  endpoints:
+  - port: metrics
+    interval: {{ .Values.metrics.serviceMonitor.interval }}
+    scrapeTimeout: {{ .Values.metrics.serviceMonitor.scrapeTimeout }}
+    path: {{ .Values.metrics.path }}
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "mongos.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end -}}

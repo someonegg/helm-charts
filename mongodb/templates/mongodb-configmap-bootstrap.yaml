@@ -15,7 +15,7 @@ data:
     # set -x
 
     {{- if .Values.auth.enabled }}
-    MONGOCLI=(mongo -u "$ADMIN_USER" -p "$ADMIN_PASSWORD" --quiet)
+    MONGOCLI=(mongo -u "$CLUSTER_USER" -p "$CLUSTER_PASSWORD" --quiet)
     {{- else }}
     MONGOCLI=(mongo --quiet)
     {{- end }}
@@ -70,7 +70,7 @@ data:
         local uninitialized=()
         local peer=""
         for peer in "${PEERS[@]}"; do
-            if ("${MONGOCLI[@]}" --host "$peer" --eval "rs.status()" | grep "NotYetInitialized"); then
+            if ("${MONGOCLI[@]}" --host "$peer" --eval "rs.status()" | grep "NotYetInitialized" >/dev/null); then
                 uninitialized=(${uninitialized[@]} "$peer")
             fi
         done
@@ -109,6 +109,23 @@ data:
         try_once
         sleep 5
     done
+
+    {{- if (eq "shardsvr" .Values.clusterRole) }}
+    add_shard() {
+        echo "add shard..."
+
+        local output=""
+        output=$( "${MONGOCLI[@]}" admin --host "$ANNOUNCE_MONGOS" \
+            --eval "sh.addShard('{{ .Values.replicaSetName }}/{{ $fullName }}-0.{{ $suffixFQDN }}:{{ $dbport }}').ok" )
+        if [[ "$output" != "1" ]]; then
+            return 1
+        fi
+        return 0
+    }
+    until add_shard; do
+        sleep 5
+    done
+    {{- end }}
 
     echo "bootstrap done"
     exit 0
