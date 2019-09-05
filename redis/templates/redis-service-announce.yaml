@@ -1,4 +1,3 @@
-{{- if not .Values.hostNetwork -}}
 {{- $fullName := include "redis.fullname" . -}}
 {{- $replicas := int .Values.replicas -}}
 {{- range $i := until $replicas }}
@@ -33,4 +32,3 @@ spec:
     statefulset.kubernetes.io/pod-name: {{ $fullName }}-{{ $i }}
 {{- end }}
 {{- end }}
-{{- end -}}

@@ -7,7 +7,7 @@ metadata:
     {{- include "mongodb.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": "post-install,post-upgrade,post-rollback"
-    "helm.sh/hook-delete-policy": "before-hook-creation"
+    "helm.sh/hook-delete-policy": "hook-succeeded,before-hook-creation"
 spec:
   template:
     spec:
@@ -32,28 +32,6 @@ spec:
             secretKeyRef:
               name: {{ include "mongodb.adminSecret" . }}
               key: password
-        - name: RWANY_USER
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "mongodb.rwanySecret" . }}
-              key: user
-        - name: RWANY_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "mongodb.rwanySecret" . }}
-              key: password
-        {{- if .Values.metrics.enabled }}
-        - name: METRICS_USER
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "mongodb.metricsSecret" . }}
-              key: user
-        - name: METRICS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "mongodb.metricsSecret" . }}
-              key: password
-        {{- end }}
         {{- end }}
         volumeMounts:
         - name: bootstrap

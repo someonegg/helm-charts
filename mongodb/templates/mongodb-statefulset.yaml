@@ -101,6 +101,28 @@ spec:
             secretKeyRef:
               name: {{ include "mongodb.adminSecret" . }}
               key: password
+        - name: RWANY_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "mongodb.rwanySecret" . }}
+              key: user
+        - name: RWANY_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "mongodb.rwanySecret" . }}
+              key: password
+        {{- if .Values.metrics.enabled }}
+        - name: METRICS_USER
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "mongodb.metricsSecret" . }}
+              key: user
+        - name: METRICS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "mongodb.metricsSecret" . }}
+              key: password
+        {{- end }}
         {{- end }}
         volumeMounts:
         - name: config
@@ -126,6 +148,11 @@ spec:
         args:
         - --config=/data/store/conf/mongod.conf
         - --dbpath=/data/store/db
+        {{- if (eq "configsvr" .Values.clusterRole) }}
+        - --configsvr
+        {{- else if (eq "shardsvr" .Values.clusterRole) }}
+        - --shardsvr
+        {{- end }}
         - --replSet={{ .Values.replicaSetName }}
         - --port={{ .Values.mongodb.port }}
         - --bind_ip=0.0.0.0

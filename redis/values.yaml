@@ -81,13 +81,10 @@ redis:
   config:
     ## http://download.redis.io/redis-stable/redis.conf
     min-slaves-to-write: 1
-    min-slaves-max-lag: 5 # s
+    min-slaves-max-lag: 10 # s
     maxmemory: "0"
     maxmemory-policy: "volatile-lru"
     save: "900 1"
-    repl-diskless-sync: "yes"
-    rdbcompression: "yes"
-    rdbchecksum: "yes"
 
   ## Custom redis.conf files used to override default settings. If this file is
   ## specified then the redis.config above will be ignored.
@@ -108,9 +105,9 @@ sentinel:
   quorum: 2
   config:
     ## http://download.redis.io/redis-stable/sentinel.conf
-    down-after-milliseconds: 10000
+    down-after-milliseconds: 30000
     failover-timeout: 180000 # ms
-    parallel-syncs: 5
+    parallel-syncs: 1
 
   # customConfig: |
 

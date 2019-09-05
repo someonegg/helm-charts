@@ -1,9 +1,10 @@
 apiVersion: v1
 name: mongodb
 home: https://www.mongodb.com
-version: 1.0.5
+version: 1.0.6
 appVersion: 3.6.13
 description: Kubernetes implementation of MongoDB ReplicaSet.
 sources:
 - https://github.com/mongodb/mongo
 - https://github.com/percona/mongodb_exporter
+- https://github.com/someonegg/helm-charts

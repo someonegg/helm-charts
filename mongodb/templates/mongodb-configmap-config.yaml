@@ -15,7 +15,7 @@ data:
 
   init.sh: |
     #!/bin/bash
-    set -x
+    # set -x
 
     POD_IP=$(getent hosts "$POD_NAME.{{ include "mongodb.fullname" . }}" | awk '{ print $1 }')
     if [ -z "$POD_IP" ]; then
@@ -95,7 +95,7 @@ data:
 
     {{- if .Values.auth.enabled }}
 
-    init_root_auth() {
+    init_auth() {
         if [ -f /data/store/conf/done ]; then
             echo "Skipping init mongod auth"
             return 0
@@ -108,9 +108,11 @@ data:
         waiting_mongo
         echo "Init auth on standalone mongod"
         mongo admin --host "$LCAL_HOST" --eval "db.createUser({user: '$ADMIN_USER', pwd: '$ADMIN_PASSWORD', roles: [{role: 'root', db: 'admin'}]})"
+        mongo admin --host "$LCAL_HOST" --eval "db.createUser({user: '$RWANY_USER', pwd: '$RWANY_PASSWORD', roles: ['readWriteAnyDatabase']})"
+        mongo admin --host "$LCAL_HOST" --eval "db.createUser({user: '$METRICS_USER', pwd: '$METRICS_PASSWORD', roles: [{role: 'clusterMonitor', db: 'admin'}, {role: 'read', db: 'local'}]})"
         shutdown_mongo
     }
-    init_root_auth
+    init_auth
     {{- end }}
 
     echo "Done" > /data/store/conf/done

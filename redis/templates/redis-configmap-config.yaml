@@ -36,7 +36,7 @@ data:
 
   init.sh: |
     #!/bin/sh
-    set -x
+    # set -x
 
     INDEX="${POD_NAME##*-}"
     POD_PREFIX="${POD_NAME%-*}"

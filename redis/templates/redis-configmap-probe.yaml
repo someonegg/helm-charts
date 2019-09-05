@@ -7,7 +7,7 @@ metadata:
 data:
   check-quorum.sh: |
     #!/bin/sh
-    set -eux
+    set -eu
     MASTER_GROUP={{ .Values.masterGroupName }}
     SENTINEL_PORT={{ .Values.sentinel.port }}
     REDIS_PORT={{ .Values.redis.port }}
@@ -29,7 +29,7 @@ data:
 
   readiness.sh: |
     #!/bin/sh
-    set -eux
+    set -eu
     CHECK_SERVER="$(redis-cli -p "$1"{{ if .Values.auth.enabled }} -a "$AUTH"{{ end }} ping)"
 
     if [ "$CHECK_SERVER" != "PONG" ]; then

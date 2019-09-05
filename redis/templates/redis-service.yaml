@@ -4,11 +4,14 @@ metadata:
   name: {{ include "redis.fullname" . }}
   labels:
     {{- include "redis.labels" . | nindent 4 }}
+    serviceMonitor: "true"
   annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
     {{- with .Values.svcAnnotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
 spec:
+  publishNotReadyAddresses: true
   type: ClusterIP
   clusterIP: None
   ports:
