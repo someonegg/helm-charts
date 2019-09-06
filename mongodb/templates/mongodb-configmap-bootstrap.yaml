@@ -29,7 +29,7 @@ data:
         echo "do install..."
         local master="{{ $fullName }}-0.{{ $suffixFQDN }}:{{ $dbport }}"
         local initiate_js="rs.initiate({ \
-          _id: '{{ .Values.replicaSetName }}', \
+          _id: '{{ .Values.replSet }}', \
           members: [
             {{- range $i := until $replicas -}}
             {{- if gt $i 0 -}} , {{- end -}}
@@ -111,12 +111,13 @@ data:
     done
 
     {{- if (eq "shardsvr" .Values.clusterRole) }}
+
     add_shard() {
         echo "add shard..."
 
         local output=""
         output=$( "${MONGOCLI[@]}" admin --host "$ANNOUNCE_MONGOS" \
-            --eval "sh.addShard('{{ .Values.replicaSetName }}/{{ $fullName }}-0.{{ $suffixFQDN }}:{{ $dbport }}').ok" )
+            --eval "sh.addShard('{{ .Values.replSet }}/{{ $fullName }}-0.{{ $suffixFQDN }}:{{ $dbport }}').ok" )
         if [[ "$output" != "1" ]]; then
             return 1
         fi

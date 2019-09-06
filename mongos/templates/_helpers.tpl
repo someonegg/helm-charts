@@ -73,28 +73,6 @@ podAntiAffinity:
 {{- end -}}
 
 {{/*
-Get the name for the metrics secret.
-*/}}
-{{- define "mongos.metricsSecret" -}}
-{{- if .Values.auth.existingMetricsSecret -}}
-{{- .Values.auth.existingMetricsSecret -}}
-{{- else -}}
-{{- include "mongos.fullname" . -}}-metrics
-{{- end -}}
-{{- end -}}
-
-{{/*
-Get the name for the key secret.
-*/}}
-{{- define "mongos.keySecret" -}}
-{{- if .Values.auth.existingKeySecret -}}
-{{- .Values.auth.existingKeySecret -}}
-{{- else -}}
-{{- include "mongos.fullname" . -}}-keyfile
-{{- end -}}
-{{- end -}}
-
-{{/*
 Get the FQDN suffix.
 */}}
 {{- define "mongos.suffixFQDN" -}}
@@ -117,4 +95,37 @@ Get the announce address.
 {{- if gt $i 0 -}},{{- end -}}
 {{ $fullName }}-{{ $i }}.{{ $suffixFQDN }}:{{ $dbport }}
 {{- end -}}
+{{- end -}}
+
+{{- define "mongos.call-nested" -}}
+{{- $dot := index . 0 -}}
+{{- $subchart := index . 1 | splitList "." -}}
+{{- $template := index . 2 -}}
+{{- $values := $dot.Values -}}
+{{- range $subchart -}}
+{{- $values = index $values . -}}
+{{- end -}}
+{{- include $template (dict "Chart" (dict "Name" (last $subchart)) "Values" $values "Release" $dot.Release "Capabilities" $dot.Capabilities) -}}
+{{- end -}}
+
+{{/*
+Get the name for the metrics secret.
+*/}}
+{{- define "mongos.metricsSecret" -}}
+{{- include "mongos.call-nested" (list . "configsvr" "mongodb.metricsSecret") -}}
+{{- end -}}
+
+{{/*
+Get the name for the key secret.
+*/}}
+{{- define "mongos.keySecret" -}}
+{{- include "mongos.call-nested" (list . "configsvr" "mongodb.keySecret") -}}
+{{- end -}}
+
+{{- define "mongos.configsvr.announce" -}}
+{{- include "mongos.call-nested" (list . "configsvr" "mongodb.announce") -}}
+{{- end -}}
+
+{{- define "mongos.configsvr.rsAnnounce" -}}
+{{- include "mongos.call-nested" (list . "configsvr" "mongodb.rsAnnounce") -}}
 {{- end -}}

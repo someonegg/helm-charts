@@ -25,7 +25,7 @@ spec:
         - name: ANNOUNCE_MONGOS
           valueFrom:
             configMapKeyRef:
-              name: {{ .Values.shardingAnnounce }}
+              name: {{ .Values.mongosAnnounce }}
               key: mongos
         {{- end }}
         {{- if .Values.auth.enabled }}

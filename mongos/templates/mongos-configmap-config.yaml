@@ -5,5 +5,5 @@ metadata:
   labels:
     {{- include "mongos.labels" . | nindent 4 }}
 data:
-  mongod.conf: |
+  mongos.conf: |
     {{- toYaml .Values.mongos.configmap | nindent 4 }}

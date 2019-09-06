@@ -6,3 +6,4 @@ metadata:
     {{- include "mongos.labels" . | nindent 4 }}
 data:
   mongos: {{ include "mongos.announce" . | quote }}
+  configsvr: {{ include "mongos.configsvr.announce" . | quote }}

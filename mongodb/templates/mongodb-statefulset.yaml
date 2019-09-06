@@ -162,7 +162,7 @@ spec:
         {{- else if (eq "shardsvr" .Values.clusterRole) }}
         - --shardsvr
         {{- end }}
-        - --replSet={{ .Values.replicaSetName }}
+        - --replSet={{ .Values.replSet }}
         - --port={{ .Values.mongodb.port }}
         - --bind_ip=0.0.0.0
         {{- if .Values.auth.enabled }}

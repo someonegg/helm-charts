@@ -1,19 +1,10 @@
 ## Default values for mongos.
 
 replicas: 3
-shardingAnnounce: sharding-announce
-manualMode: false
 
-auth:
-  enabled: false
-  metricsUser: metric
-  metricsPassword: ZoEQD1qf
-  # existingMetricsSecret:
-
-  key: |
-    5sQGKYvjc8ov0OCqb3+Vf+LwnKuLZpwfCH2Ywgqzave56YfdBl4+ctahnHT0qiHj
-    y/ZYv/GBWVhZioNdqk+RUPlvjkgZQ0ViFAOmPRpCRc/bAG1XsrnfHL/v
-  # existingKeySecret:
+configsvr:
+  replSet: config
+  clusterRole: configsvr
 
 extraLabels: {}
 
@@ -76,7 +67,6 @@ initConfig:
 
 mongos:
   port: 27017
-  initPort: 27018
   # suffixFQDN: servers.xxx.com
 
   configmap: {}

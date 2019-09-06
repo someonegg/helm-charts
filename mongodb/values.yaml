@@ -1,9 +1,9 @@
 ## Default values for mongodb.
 
 replicas: 3
-replicaSetName: rs0
+replSet: rs0
 clusterRole: none
-shardingAnnounce: sharding-announce
+# mongosAnnounce: mongos-announce
 manualMode: false
 
 auth:

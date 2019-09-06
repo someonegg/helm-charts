@@ -156,5 +156,5 @@ Get the announce address.
 Get the rs announce address.
 */}}
 {{- define "mongodb.rsAnnounce" -}}
-{{- .Values.replicaSetName -}}/{{- include "mongodb.announce" . -}}
+{{- .Values.replSet -}}/{{- include "mongodb.announce" . -}}
 {{- end -}}

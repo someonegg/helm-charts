@@ -1,9 +1,9 @@
 apiVersion: v1
 name: mongos
 home: https://www.mongodb.com
-version: 1.0.0
+version: 1.0.1
 appVersion: 3.6.13
-description: Kubernetes implementation of mongos.
+description: Kubernetes implementation of Mongo Sharding.
 sources:
 - https://github.com/mongodb/mongo
 - https://github.com/percona/mongodb_exporter

@@ -1,0 +1,5 @@
+dependencies:
+- name: mongodb
+  repository: file://../mongodb
+  version: 1.0.6
+  alias: configsvr
