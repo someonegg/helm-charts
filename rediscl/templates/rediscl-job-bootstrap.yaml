@@ -1,0 +1,39 @@
+{{- if not .Values.manualMode -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "rediscl.fullname" . }}-bootstrap
+  labels:
+    {{- include "rediscl.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": "post-install,post-upgrade,post-rollback"
+    "helm.sh/hook-delete-policy": "hook-succeeded,before-hook-creation"
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: job-bootstrap
+        image: {{ .Values.cliImage.repository }}:{{ .Values.cliImage.tag }}
+        imagePullPolicy: {{ .Values.cliImage.pullPolicy }}
+        command:
+        - bash
+        args:
+        - /readonly-config/bootstrap.sh
+        env:
+        {{- if .Values.auth.enabled }}
+        - name: AUTH
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "rediscl.authSecret" . }}
+              key: password
+        {{- end }}
+        volumeMounts:
+        - name: bootstrap
+          mountPath: /readonly-config
+          readOnly: true
+      volumes:
+      - name: bootstrap
+        configMap:
+          name: {{ include "rediscl.fullname" . }}-bootstrap
+{{- end -}}

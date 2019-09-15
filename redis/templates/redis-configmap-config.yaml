@@ -54,7 +54,7 @@ data:
     ANNOUNCE_IP=$(getent hosts "$SERVICE-announce-$INDEX" | awk '{ print $1 }')
     {{- end }}
     if [ -z "$ANNOUNCE_IP" ]; then
-        "Could not resolve the announce ip for this pod"
+        echo "Could not resolve the announce ip for this pod"
         exit 1
     fi
 
@@ -168,11 +168,12 @@ data:
 
     {{- end }}
 
-    if [ -n "$AUTH" ]; then
-        echo "Setting auth values"
-        ESCAPED_AUTH=$(echo "$AUTH" | sed -e 's/[\/&]/\\&/g');
-        sed -i "s/replace-default-auth/${ESCAPED_AUTH}/" "$REDIS_CONF" "$SENTINEL_CONF"
-    fi
+    {{- if .Values.auth.enabled }}
+
+    echo "Setting auth values"
+    ESCAPED_AUTH=$(echo "$AUTH" | sed -e 's/[\/&]/\\&/g');
+    sed -i "s/replace-default-auth/${ESCAPED_AUTH}/" "$REDIS_CONF" "$SENTINEL_CONF"
+    {{- end }}
 
     echo "Done" > /data/store/conf/done
     echo "Ready..."

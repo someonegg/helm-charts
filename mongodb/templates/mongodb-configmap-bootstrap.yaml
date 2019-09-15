@@ -1,12 +1,12 @@
 {{- if not .Values.manualMode -}}
-{{- $fullName := include "mongodb.fullname" . -}}
+{{- $fullname := include "mongodb.fullname" . -}}
 {{- $suffixFQDN := include "mongodb.suffixFQDN" . -}}
 {{- $replicas := int .Values.replicas -}}
 {{- $dbport := int .Values.mongodb.port -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "mongodb.fullname" . }}-bootstrap
+  name: {{ $fullname }}-bootstrap
   labels:
     {{- include "mongodb.labels" . | nindent 4 }}
 data:
@@ -22,18 +22,18 @@ data:
 
     PEERS=()
     {{- range $i := until $replicas }}
-    PEERS[{{ $i }}]="{{ $fullName }}-{{ $i }}.{{ $suffixFQDN }}:{{ $dbport }}"
+    PEERS[{{ $i }}]="{{ $fullname }}-{{ $i }}.{{ $suffixFQDN }}:{{ $dbport }}"
     {{- end }}
 
     do_install() {
         echo "do install..."
-        local master="{{ $fullName }}-0.{{ $suffixFQDN }}:{{ $dbport }}"
+        local master="{{ $fullname }}-0.{{ $suffixFQDN }}:{{ $dbport }}"
         local initiate_js="rs.initiate({ \
           _id: '{{ .Values.replSet }}', \
           members: [
             {{- range $i := until $replicas -}}
             {{- if gt $i 0 -}} , {{- end -}}
-            { _id: {{ $i }}, host: '{{ $fullName }}-{{ $i }}.{{ $suffixFQDN }}:{{ $dbport }}' }
+            { _id: {{ $i }}, host: '{{ $fullname }}-{{ $i }}.{{ $suffixFQDN }}:{{ $dbport }}' }
             {{- end -}}
           ] \
         })"
@@ -117,7 +117,7 @@ data:
 
         local output=""
         output=$( "${MONGOCLI[@]}" admin --host "$ANNOUNCE_MONGOS" \
-            --eval "sh.addShard('{{ .Values.replSet }}/{{ $fullName }}-0.{{ $suffixFQDN }}:{{ $dbport }}').ok" )
+            --eval "sh.addShard('{{ .Values.replSet }}/{{ $fullname }}-0.{{ $suffixFQDN }}:{{ $dbport }}').ok" )
         if [[ "$output" != "1" ]]; then
             return 1
         fi

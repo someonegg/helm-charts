@@ -2,7 +2,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "mongos.name" -}}
+{{- define "rediscl.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
@@ -11,7 +11,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "mongos.fullname" -}}
+{{- define "rediscl.fullname" -}}
 {{- if .Values.fullnameOverride -}}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
@@ -30,16 +30,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "mongos.chart" -}}
+{{- define "rediscl.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
 Common labels
 */}}
-{{- define "mongos.labels" -}}
-app.kubernetes.io/name: {{ include "mongos.name" . }}
-helm.sh/chart: {{ include "mongos.chart" . }}
+{{- define "rediscl.labels" -}}
+app.kubernetes.io/name: {{ include "rediscl.name" . }}
+helm.sh/chart: {{ include "rediscl.chart" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
@@ -50,14 +50,18 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 {{- end -}}
 
-{{- define "mongos.podDefaultAffinity" -}}
+{{- define "rediscl.podDefaultAffinity" -}}
+{{- $dot := index . 0 -}}
+{{- $group := index . 1 -}}
+{{- with $dot -}}
 {{- if .Values.podAntiAffinity.hard -}}
 podAntiAffinity:
   requiredDuringSchedulingIgnoredDuringExecution:
   - labelSelector:
       matchLabels:
-        app.kubernetes.io/name: {{ include "mongos.name" . }}
+        app.kubernetes.io/name: {{ include "rediscl.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
+        rediscl/group: "{{ $group }}"
     topologyKey: {{ default "kubernetes.io/hostname" .Values.podAntiAffinity.topologyKey | quote }}
 {{- else -}}
 podAntiAffinity:
@@ -66,66 +70,37 @@ podAntiAffinity:
     podAffinityTerm:
       labelSelector:
         matchLabels:
-          app.kubernetes.io/name: {{ include "mongos.name" . }}
+          app.kubernetes.io/name: {{ include "rediscl.name" . }}
           app.kubernetes.io/instance: {{ .Release.Name }}
+          rediscl/group: "{{ $group }}"
       topologyKey: {{ default "kubernetes.io/hostname" .Values.podAntiAffinity.topologyKey | quote }}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
-Get the FQDN suffix.
+Create the name for the auth secret.
 */}}
-{{- define "mongos.suffixFQDN" -}}
-{{- if .Values.mongos.suffixFQDN -}}
-{{- .Values.mongos.suffixFQDN -}}
+{{- define "rediscl.authSecret" -}}
+{{- if .Values.auth.existingSecret -}}
+{{- .Values.auth.existingSecret -}}
 {{- else -}}
-{{- include "mongos.fullname" . -}}.{{ .Release.Namespace }}.svc
+{{- include "rediscl.fullname" . -}}
 {{- end -}}
+{{- end -}}
+
+{{/*
+Get the bus port.
+*/}}
+{{- define "rediscl.busPort" -}}
+{{- add 10000 (int .Values.redis.port) -}}
 {{- end -}}
 
 {{/*
 Get the announce address.
 */}}
-{{- define "mongos.announce" -}}
-{{- $fullname := include "mongos.fullname" . -}}
-{{- $suffixFQDN := include "mongos.suffixFQDN" . -}}
-{{- $replicas := int .Values.replicas -}}
-{{- $dbport := int .Values.mongos.port -}}
-{{- range $i := until $replicas -}}
-{{- if gt $i 0 -}},{{- end -}}
-{{ $fullname }}-{{ $i }}.{{ $suffixFQDN }}:{{ $dbport }}
-{{- end -}}
-{{- end -}}
-
-{{- define "mongos.call-nested" -}}
-{{- $dot := index . 0 -}}
-{{- $subchart := index . 1 | splitList "." -}}
-{{- $template := index . 2 -}}
-{{- $values := $dot.Values -}}
-{{- range $subchart -}}
-{{- $values = index $values . -}}
-{{- end -}}
-{{- include $template (dict "Chart" (dict "Name" (last $subchart)) "Values" $values "Release" $dot.Release "Capabilities" $dot.Capabilities) -}}
-{{- end -}}
-
-{{/*
-Get the name for the metrics secret.
-*/}}
-{{- define "mongos.metricsSecret" -}}
-{{- include "mongos.call-nested" (list . "configsvr" "mongodb.metricsSecret") -}}
-{{- end -}}
-
-{{/*
-Get the name for the key secret.
-*/}}
-{{- define "mongos.keySecret" -}}
-{{- include "mongos.call-nested" (list . "configsvr" "mongodb.keySecret") -}}
-{{- end -}}
-
-{{- define "mongos.configsvr.announce" -}}
-{{- include "mongos.call-nested" (list . "configsvr" "mongodb.announce") -}}
-{{- end -}}
-
-{{- define "mongos.configsvr.rsAnnounce" -}}
-{{- include "mongos.call-nested" (list . "configsvr" "mongodb.rsAnnounce") -}}
+{{- define "rediscl.announce" -}}
+{{- include "rediscl.fullname" . -}}.
+{{- .Release.Namespace -}}.svc:
+{{- .Values.redis.port -}}
 {{- end -}}

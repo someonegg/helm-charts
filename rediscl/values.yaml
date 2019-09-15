@@ -1,0 +1,141 @@
+## Default values for rediscl.
+
+groups: 3
+replicas: 3
+manualMode: false
+
+rebalance:
+  enabled: true
+  delaySeconds: 60
+
+auth:
+  enabled: false
+  password: M5t7Oumg
+  # existingSecret: rediscl-password
+
+extraLabels: {}
+
+## Pod config
+
+image:
+  repository: redis
+  tag: 4.0.14
+  pullPolicy: IfNotPresent
+
+cliImage:
+  repository: redis
+  tag: 5.0.5
+  pullPolicy: IfNotPresent
+
+persistence:
+  enabled: false
+  # storageClass: "-"
+  accessModes:
+  - ReadWriteOnce
+  size: 10Gi
+  annotations: {}
+
+podDisruptionBudget: {}
+  # maxUnavailable: 1
+  # minAvailable: 1
+
+podAnnotations: {}
+
+svcAnnotations: {}
+
+securityContext:
+  runAsUser: 1000
+  fsGroup: 1000
+  runAsNonRoot: true
+
+hostNetwork: false
+terminationGracePeriodSeconds: 30
+
+## Pod assignment
+
+nodeSelector: {}
+
+tolerations: []
+
+# affinity: |
+  ## go tpl
+
+podAntiAffinity:
+  hard: false
+  # topologyKey: kubernetes.io/hostname
+
+# schedulerName: stork
+
+## Containers
+
+initSysctl:
+  enabled: false
+  image:
+    repository: bitnami/minideb
+    tag: latest
+    pullPolicy: IfNotPresent
+  command: []
+  mountHostSys: false
+
+initConfig:
+  resources: {}
+    # requests:
+    #   memory: 200Mi
+    #   cpu: 100m
+    # limits:
+    #   memory: 200Mi
+
+redis:
+  port: 6379
+  config:
+    ## http://download.redis.io/redis-stable/redis.conf
+    min-slaves-to-write: 1
+    min-slaves-max-lag: 10 # s
+    maxmemory: "0"
+    maxmemory-policy: "volatile-lru"
+    save: "900 1"
+
+  ## Custom redis.conf files used to override default settings. If this file is
+  ## specified then the redis.config above will be ignored.
+  # customConfig: |
+    ## Define configuration here
+
+  readinessProbe:
+    initialDelaySeconds: 15
+    periodSeconds: 5
+  livenessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 5
+
+  resources: {}
+
+metrics:
+  enabled: false
+  image:
+    repository: oliver006/redis_exporter
+    tag: v1.0.2
+    pullPolicy: IfNotPresent
+
+  extraEnvs: []
+  # - name: REDIS_EXPORTER_LOG_FORMAT
+  #   value: json
+
+  ## prometheus port & scrape path
+  port: 9121
+  path: /metrics
+
+  prometheusDiscovery: false
+
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    scrapeTimeout: 10s
+    # prometheusNamespace: "monitoring"
+    prometheusSelector: {}
+
+  livenessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 15
+    timeoutSeconds: 1
+
+  resources: {}

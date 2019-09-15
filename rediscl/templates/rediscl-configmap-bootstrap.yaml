@@ -1,0 +1,148 @@
+{{- if not .Values.manualMode -}}
+{{- $fullname := include "rediscl.fullname" . -}}
+{{- $groups := int .Values.groups -}}
+{{- $replicas := int .Values.replicas -}}
+{{- $dbport := int .Values.redis.port -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $fullname }}-bootstrap
+  labels:
+    {{- include "rediscl.labels" . | nindent 4 }}
+data:
+  bootstrap.sh: |
+    #!/bin/bash
+    # set -x
+
+    {{/* separator line */}}
+
+    {{- $rediscli := printf `redis-cli -p %d` $dbport -}}
+    {{- if .Values.auth.enabled -}}
+    {{- $rediscli = printf `%s -a "$AUTH"` $rediscli -}}
+    {{- end -}}
+
+    announce_ip() {
+        {{- if .Values.hostNetwork }}
+        getent hosts "{{ $fullname }}-$1-$2.{{ $fullname }}-domain" | awk '{ print $1 }'
+        {{- else }}
+        getent hosts "{{ $fullname }}-announce-$1-$2" | awk '{ print $1 }'
+        {{- end }}
+    }
+
+    meet_once() {
+        echo "meet once..."
+        local i=0; local j=0
+
+        local ANCHOR=$(announce_ip 0 0)
+        if [ -z "$ANCHOR" ]; then
+            echo "Could not resolve ip for the anchor"
+            return 1
+        fi
+
+        for i in {0.. {{- sub $groups 1 -}} }; do
+            for j in {0.. {{- sub $replicas 1 -}} }; do
+                local INSTANCE=$(announce_ip $i $j)
+                if [ -z "$INSTANCE" ]; then
+                    echo "Could not resolve ip for instance-$i-$j"
+                    return 2
+                fi
+                local OUT=$({{ $rediscli }} -h $INSTANCE CLUSTER MEET "$ANCHOR" {{ $dbport }} 2>/dev/null)
+                if [ "$OUT" != "OK" ]; then
+                    echo "CLUSTER MEET error for instance-$i-$j, $OUT"
+                    return 3
+                fi
+            done
+        done
+
+        echo "meet done"
+        return 0
+    }
+
+    until meet_once; do
+        sleep 5
+    done
+
+    group_master() {
+        local i=$1; local j=0
+        for j in {0.. {{- sub $replicas 1 -}} }; do
+            local IP=$(announce_ip $i $j)
+            if [ -z "$IP" ]; then
+                return 2
+            fi
+            local MYSELF=$({{ $rediscli }} -h $IP CLUSTER NODES 2>/dev/null | grep 'myself,master')
+            if [ -n "$MYSELF" ]; then
+                local ID=$(echo $MYSELF | awk '{ print $1 }')
+                echo $IP $ID
+                return 0
+            fi
+        done
+        return 1
+    }
+
+    repli_once() {
+        echo "repli once..."
+        local i=0; local j=0
+
+        for i in {0.. {{- sub $groups 1 -}} }; do
+            local MASTER=$(group_master $i)
+            if [ -z "$MASTER" ]; then
+                echo "Could not find master for group-$i"
+                return 1
+            fi
+            local MASTER_IP=$(echo $MASTER | awk '{ print $1 }')
+            local MASTER_ID=$(echo $MASTER | awk '{ print $2 }')
+
+            for j in {0.. {{- sub $replicas 1 -}} }; do
+                local INSTANCE=$(announce_ip $i $j)
+                if [ -z "$INSTANCE" ]; then
+                    echo "Could not resolve ip for instance-$i-$j"
+                    return 2
+                fi
+                if [ "$INSTANCE" == "$MASTER_IP" ]; then
+                    continue
+                fi
+                local OUT=$({{ $rediscli }} -h $INSTANCE CLUSTER REPLICATE $MASTER_ID 2>/dev/null)
+                if [ "$OUT" != "OK" ]; then
+                    echo "CLUSTER REPLICATE error for instance-$i-$j, $OUT"
+                    return 3
+                fi
+            done
+        done
+
+        echo "repli done"
+        return 0
+    }
+
+    until repli_once; do
+        sleep 5
+    done
+
+    sleep 5
+
+    manage_slots() {
+        local ANCHOR=$(announce_ip 0 0)
+        if [ -z "$ANCHOR" ]; then
+            echo "Could not resolve ip for the anchor"
+            return 1
+        fi
+
+        {{- if .Values.auth.enabled }}
+        yes "yes" | redis-cli -a "$AUTH" --cluster fix $ANCHOR:{{ $dbport }}
+        {{- else }}
+        yes "yes" | redis-cli --cluster fix $ANCHOR:{{ $dbport }}
+        {{- end }}
+
+        {{- if .Values.rebalance.enabled }}
+        sleep {{ .Values.rebalance.delaySeconds }}
+        {{- if .Values.auth.enabled }}
+        yes "yes" | redis-cli -a "$AUTH" --cluster rebalance $ANCHOR:{{ $dbport }} --cluster-use-empty-masters
+        {{- else }}
+        yes "yes" | redis-cli --cluster rebalance $ANCHOR:{{ $dbport }} --cluster-use-empty-masters
+        {{- end }}
+        {{- end }}
+    }
+    manage_slots
+
+    echo "bootstrap done"
+    exit 0
+{{- end -}}

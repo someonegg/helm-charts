@@ -142,13 +142,13 @@ Get the FQDN suffix.
 Get the announce address.
 */}}
 {{- define "mongodb.announce" -}}
-{{- $fullName := include "mongodb.fullname" . -}}
+{{- $fullname := include "mongodb.fullname" . -}}
 {{- $suffixFQDN := include "mongodb.suffixFQDN" . -}}
 {{- $replicas := int .Values.replicas -}}
 {{- $dbport := int .Values.mongodb.port -}}
 {{- range $i := until $replicas -}}
 {{- if gt $i 0 -}},{{- end -}}
-{{ $fullName }}-{{ $i }}.{{ $suffixFQDN }}:{{ $dbport }}
+{{ $fullname }}-{{ $i }}.{{ $suffixFQDN }}:{{ $dbport }}
 {{- end -}}
 {{- end -}}
 
