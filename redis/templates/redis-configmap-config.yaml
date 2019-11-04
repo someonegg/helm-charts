@@ -14,7 +14,7 @@ data:
     {{- range $key, $value := .Values.redis.config }}
     {{ $key }} {{ $value }}
     {{- end }}
-    {{- if .Values.auth.enabled }}
+    {{- if eq (toString .Values.auth.enabled) "true" }}
     requirepass replace-default-auth
     masterauth replace-default-auth
     {{- end }}
@@ -29,7 +29,7 @@ data:
     {{- range $key, $value := .Values.sentinel.config }}
     sentinel {{ $key }} {{ $.Values.masterGroupName }} {{ $value }}
     {{- end }}
-    {{- if .Values.auth.enabled }}
+    {{- if eq (toString .Values.auth.enabled) "true" }}
     sentinel auth-pass {{ .Values.masterGroupName }} replace-default-auth
     {{- end }}
     {{- end }}
@@ -134,7 +134,7 @@ data:
 
     find_master() {
         echo "Attempting to find master"
-        if [ "$(redis-cli -h "$MASTER"{{ if .Values.auth.enabled }} -a "$AUTH"{{ end }} ping)" != "PONG" ]; then
+        if [ "$(redis-cli -h "$MASTER"{{ if eq (toString .Values.auth.enabled) "true" }} -a "$AUTH"{{ end }} ping)" != "PONG" ]; then
            echo "Can't ping master, attempting to force failover"
            if redis-cli -h "$SERVICE" -p "$SENTINEL_PORT" sentinel failover "$MASTER_GROUP" | grep -q 'NOGOODSLAVE' ; then
                setup_defaults
@@ -168,7 +168,7 @@ data:
 
     {{- end }}
 
-    {{- if .Values.auth.enabled }}
+    {{- if eq (toString .Values.auth.enabled) "true" }}
 
     echo "Setting auth values"
     ESCAPED_AUTH=$(echo "$AUTH" | sed -e 's/[\/&]/\\&/g');

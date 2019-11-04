@@ -1,6 +1,7 @@
 ## Default values for mongodb.
 
 replicas: 3
+hiddens: 0
 replSet: rs0
 clusterRole: none
 # mongosAnnounce: mongos-announce
@@ -100,7 +101,11 @@ mongodb:
   port: 27017
   # suffixFQDN: servers.xxx.com
 
-  configmap: {}
+  configmap:
+    storage:
+      wiredTiger:
+        engineConfig:
+          cacheSizeGB: 1
 
   extraEnvs: {}
   # - name: TCMALLOC_AGGRESSIVE_DECOMMIT

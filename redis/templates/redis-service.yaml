@@ -23,7 +23,7 @@ spec:
     port: {{ .Values.sentinel.port }}
     protocol: TCP
     targetPort: sentinel
-  {{- if .Values.metrics.enabled }}
+  {{- if eq (toString .Values.metrics.enabled) "true" }}
   - name: metrics
     port: {{ .Values.metrics.port }}
     protocol: TCP

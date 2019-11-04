@@ -16,7 +16,7 @@ data:
     {{- range $key, $value := .Values.redis.config }}
     {{ $key }} {{ $value }}
     {{- end }}
-    {{- if .Values.auth.enabled }}
+    {{- if eq (toString .Values.auth.enabled) "true" }}
     requirepass replace-default-auth
     masterauth replace-default-auth
     {{- end }}
@@ -56,7 +56,7 @@ data:
     cp -f /readonly-config/redis.conf "$REDIS_CONF"
     echo "cluster-announce-ip $ANNOUNCE_IP" >> $REDIS_CONF
 
-    {{- if .Values.auth.enabled }}
+    {{- if eq (toString .Values.auth.enabled) "true" }}
 
     echo "Setting auth values"
     ESCAPED_AUTH=$(echo "$AUTH" | sed -e 's/[\/&]/\\&/g');

@@ -100,7 +100,12 @@ Get the bus port.
 Get the announce address.
 */}}
 {{- define "rediscl.announce" -}}
-{{- include "rediscl.fullname" . -}}.
-{{- .Release.Namespace -}}.svc:
-{{- .Values.redis.port -}}
+{{- $groups := int .Values.groups -}}
+{{- $dbport := int .Values.redis.port -}}
+{{- range $i := until $groups -}}
+{{- with $ -}}
+{{- if gt $i 0 -}},{{- end -}}
+{{- include "rediscl.fullname" . -}}-announce-{{ $i }}-0.{{ .Release.Namespace }}.svc:{{ $dbport }}
+{{- end -}}
+{{- end -}}
 {{- end -}}

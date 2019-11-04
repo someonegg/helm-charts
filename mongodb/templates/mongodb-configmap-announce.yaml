@@ -6,4 +6,5 @@ metadata:
     {{- include "mongodb.labels" . | nindent 4 }}
 data:
   mongodb: {{ include "mongodb.announce" . | quote }}
-  mongodb.rs: {{ include "mongodb.rsAnnounce" . | quote }}
+  mongodbrs: {{ include "mongodb.rsAnnounce" . | quote }}
+  mongodb.hidden: {{ include "mongodb.hidden.announce" . | quote }}

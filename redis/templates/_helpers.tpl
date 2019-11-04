@@ -96,3 +96,17 @@ Get the announce address.
 {{- end -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Get the instances announce address.
+*/}}
+{{- define "redis.insts.announce" -}}
+{{- $replicas := int .Values.replicas -}}
+{{- $dbport := int .Values.redis.port -}}
+{{- range $i := until $replicas -}}
+{{- with $ -}}
+{{- if gt $i 0 -}},{{- end -}}
+{{- include "redis.fullname" . -}}-announce-{{ $i }}.{{ .Release.Namespace }}.svc:{{ $dbport }}
+{{- end -}}
+{{- end -}}
+{{- end -}}

@@ -82,7 +82,7 @@ redis:
     ## http://download.redis.io/redis-stable/redis.conf
     min-slaves-to-write: 1
     min-slaves-max-lag: 10 # s
-    maxmemory: "0"
+    maxmemory: "512MB"
     maxmemory-policy: "volatile-lru"
     save: "900 1"
 

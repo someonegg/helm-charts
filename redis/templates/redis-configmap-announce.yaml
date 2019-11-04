@@ -5,4 +5,5 @@ metadata:
   labels:
     {{- include "redis.labels" . | nindent 4 }}
 data:
-  sentinel: {{ include "redis.announce" . | quote }}
+  redis: {{ include "redis.announce" . | quote }}
+  redis.insts: {{ include "redis.insts.announce" . | quote }}

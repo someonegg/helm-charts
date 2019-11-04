@@ -8,7 +8,7 @@ data:
   readiness.sh: |
     #!/bin/sh
     set -eu
-    CHECK_SERVER="$(redis-cli -p "$1"{{ if .Values.auth.enabled }} -a "$AUTH"{{ end }} ping)"
+    CHECK_SERVER="$(redis-cli -p "$1"{{ if eq (toString .Values.auth.enabled) "true" }} -a "$AUTH"{{ end }} ping)"
 
     if [ "$CHECK_SERVER" != "PONG" ]; then
         echo "Server check failed with: $CHECK_SERVER"

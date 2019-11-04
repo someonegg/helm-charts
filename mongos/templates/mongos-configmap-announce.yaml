@@ -7,3 +7,4 @@ metadata:
 data:
   mongos: {{ include "mongos.announce" . | quote }}
   configsvr: {{ include "mongos.configsvr.announce" . | quote }}
+  configsvr.hidden: {{ include "mongos.configsvr.hidden.announce" . | quote }}

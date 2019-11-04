@@ -2,6 +2,7 @@
 {{- $fullname := include "mongodb.fullname" . -}}
 {{- $suffixFQDN := include "mongodb.suffixFQDN" . -}}
 {{- $replicas := int .Values.replicas -}}
+{{- $hiddens := int .Values.hiddens -}}
 {{- $dbport := int .Values.mongodb.port -}}
 apiVersion: v1
 kind: ConfigMap
@@ -14,8 +15,8 @@ data:
     #!/bin/bash
     # set -x
 
-    {{- if .Values.auth.enabled }}
-    MONGOCLI=(mongo -u "$CLUSTER_USER" -p "$CLUSTER_PASSWORD" --quiet)
+    {{- if eq (toString .Values.auth.enabled) "true" }}
+    MONGOCLI=(mongo -u "$CLUSTER_USER" -p "$CLUSTER_PASSWORD" --authenticationDatabase admin --quiet)
     {{- else }}
     MONGOCLI=(mongo --quiet)
     {{- end }}
@@ -43,9 +44,10 @@ data:
     do_update() {
         echo "do update..."
         local master=$1
-        local peer=""
-        for peer in "${PEERS[@]}"; do
-            "${MONGOCLI[@]}" admin --host "$master" --eval "rs.add('$peer')"
+        local id=0; local peer=""
+        for id in "${!PEERS[@]}"; do
+            peer=${PEERS[$id]}
+            "${MONGOCLI[@]}" --host "$master" --eval "rs.add({_id: $id, host: '$peer'})"
         done
     }
 
@@ -110,13 +112,62 @@ data:
         sleep 5
     done
 
+    {{- if ne $hiddens 0 }}
+
+    HIDDENS=()
+    {{- range $i := until $hiddens }}
+    HIDDENS[{{ $i }}]="{{ $fullname }}-hidden-{{ $i }}.{{ $suffixFQDN }}:{{ $dbport }}"
+    {{- end }}
+
+    hidden_do_update() {
+        echo "do update for hidden..."
+        local master=$1
+        local i=0; local id=0; local peer=""
+        for i in "${!HIDDENS[@]}"; do
+            id=$((i+100))
+            peer=${HIDDENS[$i]}
+            "${MONGOCLI[@]}" --host "$master" --eval \
+                "rs.add({_id: $id, host: '$peer', hidden: true, priority: 0})"
+        done
+    }
+
+    hidden_try_once() {
+        echo "try once for hidden..."
+
+        local master=$(find_master)
+        if [ -n "$master" ]; then
+            hidden_do_update "$master"
+        fi
+    }
+
+    hidden_is_completed() {
+        local initialized=()
+        local peer=""
+        for peer in "${HIDDENS[@]}"; do
+            if [[ $("${MONGOCLI[@]}" --host "$peer" --eval "rs.status().ok") == "1" ]]; then
+                initialized=(${initialized[@]} $peer)
+            fi
+        done
+
+        if [[ ${#initialized[@]} == ${#HIDDENS[@]} ]]; then
+            return 0
+        fi
+        return 1
+    }
+
+    until hidden_is_completed; do
+        hidden_try_once
+        sleep 5
+    done
+    {{- end }}
+
     {{- if (eq "shardsvr" .Values.clusterRole) }}
 
     add_shard() {
         echo "add shard..."
 
         local output=""
-        output=$( "${MONGOCLI[@]}" admin --host "$ANNOUNCE_MONGOS" \
+        output=$( "${MONGOCLI[@]}" --host "$ANNOUNCE_MONGOS" \
             --eval "sh.addShard('{{ .Values.replSet }}/{{ $fullname }}-0.{{ $suffixFQDN }}:{{ $dbport }}').ok" )
         if [[ "$output" != "1" ]]; then
             return 1

@@ -21,7 +21,7 @@ spec:
         args:
         - /readonly-config/bootstrap.sh
         env:
-        {{- if .Values.auth.enabled }}
+        {{- if eq (toString .Values.auth.enabled) "true" }}
         - name: AUTH
           valueFrom:
             secretKeyRef:

@@ -28,7 +28,7 @@ spec:
               name: {{ .Values.mongosAnnounce }}
               key: mongos
         {{- end }}
-        {{- if .Values.auth.enabled }}
+        {{- if eq (toString .Values.auth.enabled) "true" }}
         - name: CLUSTER_USER
           valueFrom:
             secretKeyRef:

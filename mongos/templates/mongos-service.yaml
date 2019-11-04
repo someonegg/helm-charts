@@ -18,7 +18,7 @@ spec:
     port: {{ .Values.mongos.port }}
     protocol: TCP
     targetPort: mongos
-  {{- if .Values.metrics.enabled }}
+  {{- if eq (toString .Values.metrics.enabled) "true" }}
   - name: metrics
     port: {{ .Values.metrics.port }}
     protocol: TCP

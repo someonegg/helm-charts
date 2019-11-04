@@ -35,7 +35,7 @@ spec:
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- if and (.Values.metrics.enabled) (.Values.metrics.prometheusDiscovery) }}
+        {{- if and (eq (toString .Values.metrics.enabled) "true") (.Values.metrics.prometheusDiscovery) }}
         prometheus.io/port: "{{ .Values.metrics.port }}"
         prometheus.io/scrape: "true"
         prometheus.io/path: {{ .Values.metrics.path }}
@@ -103,7 +103,7 @@ spec:
               fieldPath: status.podIP
         - name: REDISCL_GROUP
           value: "{{ $i }}"
-        {{- if .Values.auth.enabled }}
+        {{- if eq (toString .Values.auth.enabled) "true" }}
         - name: AUTH
           valueFrom:
             secretKeyRef:
@@ -128,7 +128,7 @@ spec:
         - redis-server
         args:
         - /data/store/conf/redis.conf
-        {{- if .Values.auth.enabled }}
+        {{- if eq (toString .Values.auth.enabled) "true" }}
         env:
         - name: AUTH
           valueFrom:
@@ -162,7 +162,7 @@ spec:
         resources:
           {{- toYaml . | nindent 10 }}
         {{- end }}
-      {{- if .Values.metrics.enabled }}
+      {{- if eq (toString .Values.metrics.enabled) "true" }}
       - name: metrics
         image: {{ .Values.metrics.image.repository }}:{{ .Values.metrics.image.tag }}
         imagePullPolicy: {{ .Values.metrics.image.pullPolicy }}
@@ -172,7 +172,7 @@ spec:
         env:
         - name: REDIS_ADDR
           value: redis://localhost:{{ .Values.redis.port }}
-        {{- if .Values.auth.enabled }}
+        {{- if eq (toString .Values.auth.enabled) "true" }}
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
@@ -209,7 +209,7 @@ spec:
         hostPath:
           path: /sys
       {{- end }}
-  {{- if not .Values.persistence.enabled }}
+  {{- if eq (toString .Values.persistence.enabled) "false" }}
       - name: data
         emptyDir: {}
   {{- else }}
@@ -218,7 +218,7 @@ spec:
       name: data
       {{- with .Values.persistence.annotations }}
       annotations:
-      {{- toYaml . | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
       {{- with .Values.persistence.accessModes }}

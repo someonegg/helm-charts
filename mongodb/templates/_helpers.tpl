@@ -158,3 +158,17 @@ Get the rs announce address.
 {{- define "mongodb.rsAnnounce" -}}
 {{- .Values.replSet -}}/{{- include "mongodb.announce" . -}}
 {{- end -}}
+
+{{/*
+Get the hidden announce address.
+*/}}
+{{- define "mongodb.hidden.announce" -}}
+{{- $fullname := include "mongodb.fullname" . -}}
+{{- $suffixFQDN := include "mongodb.suffixFQDN" . -}}
+{{- $hiddens := int .Values.hiddens -}}
+{{- $dbport := int .Values.mongodb.port -}}
+{{- range $i := until $hiddens -}}
+{{- if gt $i 0 -}},{{- end -}}
+{{ $fullname }}-hidden-{{ $i }}.{{ $suffixFQDN }}:{{ $dbport }}
+{{- end -}}
+{{- end -}}

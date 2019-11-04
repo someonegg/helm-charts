@@ -129,3 +129,7 @@ Get the name for the key secret.
 {{- define "mongos.configsvr.rsAnnounce" -}}
 {{- include "mongos.call-nested" (list . "configsvr" "mongodb.rsAnnounce") -}}
 {{- end -}}
+
+{{- define "mongos.configsvr.hidden.announce" -}}
+{{- include "mongos.call-nested" (list . "configsvr" "mongodb.hidden.announce") -}}
+{{- end -}}

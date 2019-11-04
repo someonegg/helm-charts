@@ -1,9 +1,19 @@
+{{- range $i, $role := (list "normal" "hidden") -}}
+{{- with $ -}}
+{{- if and (eq $role "hidden") (eq (int .Values.hiddens) 0) }}
+{{- else }}
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
+  {{- if eq $role "normal" }}
   name: {{ include "mongodb.fullname" . }}
+  {{- else }}
+  name: {{ include "mongodb.fullname" . }}-{{ $role }}
+  {{- end }}
   labels:
     {{- include "mongodb.labels" . | nindent 4 }}
+    replset/role: {{ $role }}
   {{- with .Values.podAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -13,8 +23,13 @@ spec:
     matchLabels:
       app.kubernetes.io/name: {{ include "mongodb.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
+      replset/role: {{ $role }}
   serviceName: {{ include "mongodb.fullname" . }}
+  {{- if eq $role "normal" }}
   replicas: {{ .Values.replicas }}
+  {{- else if eq $role "hidden" }}
+  replicas: {{ .Values.hiddens }}
+  {{- end }}
   podManagementPolicy: OrderedReady
   updateStrategy:
     type: RollingUpdate
@@ -23,12 +38,13 @@ spec:
       labels:
         app.kubernetes.io/name: {{ include "mongodb.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
+        replset/role: {{ $role }}
       annotations:
         checksum/configmap-config: {{ include (print .Template.BasePath "/mongodb-configmap-config.yaml") . | sha256sum }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- if and (.Values.metrics.enabled) (.Values.metrics.prometheusDiscovery) }}
+        {{- if and (eq (toString .Values.metrics.enabled) "true") (.Values.metrics.prometheusDiscovery) }}
         prometheus.io/port: "{{ .Values.metrics.port }}"
         prometheus.io/scrape: "true"
         prometheus.io/path: {{ .Values.metrics.path }}
@@ -90,7 +106,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        {{- if .Values.auth.enabled }}
+        {{- if eq (toString .Values.auth.enabled) "true" }}
         - name: ADMIN_USER
           valueFrom:
             secretKeyRef:
@@ -121,7 +137,7 @@ spec:
             secretKeyRef:
               name: {{ include "mongodb.rwanySecret" . }}
               key: password
-        {{- if .Values.metrics.enabled }}
+        {{- if eq (toString .Values.metrics.enabled) "true" }}
         - name: METRICS_USER
           valueFrom:
             secretKeyRef:
@@ -138,7 +154,7 @@ spec:
         - name: config
           mountPath: /readonly-config
           readOnly: true
-        {{- if .Values.auth.enabled }}
+        {{- if eq (toString .Values.auth.enabled) "true" }}
         - name: key
           mountPath: /readonly-key
         {{- end }}
@@ -165,7 +181,7 @@ spec:
         - --replSet={{ .Values.replSet }}
         - --port={{ .Values.mongodb.port }}
         - --bind_ip=0.0.0.0
-        {{- if .Values.auth.enabled }}
+        {{- if eq (toString .Values.auth.enabled) "true" }}
         - --auth
         - --keyFile=/data/store/conf/key.txt
         {{- end }}
@@ -195,7 +211,7 @@ spec:
         resources:
           {{- toYaml . | nindent 10 }}
         {{- end }}
-      {{- if .Values.metrics.enabled }}
+      {{- if eq (toString .Values.metrics.enabled) "true" }}
       - name: metrics
         image: {{ .Values.metrics.image.repository }}:{{ .Values.metrics.image.tag }}
         imagePullPolicy: {{ .Values.metrics.image.pullPolicy }}
@@ -205,7 +221,7 @@ spec:
         - -c
         - |
           /bin/mongodb_exporter \
-          {{- if .Values.auth.enabled }}
+          {{- if eq (toString .Values.auth.enabled) "true" }}
           --mongodb.uri mongodb://$METRICS_USER:$METRICS_PASSWORD@localhost:{{ .Values.mongodb.port }} \
           {{- else }}
           --mongodb.uri mongodb://localhost:{{ .Values.mongodb.port }} \
@@ -215,7 +231,7 @@ spec:
           {{- with .Values.metrics.extraArgs }}
           {{- . | nindent 10 }}
           {{- end }}
-        {{- if .Values.auth.enabled }}
+        {{- if eq (toString .Values.auth.enabled) "true" }}
         env:
         - name: METRICS_USER
           valueFrom:
@@ -238,7 +254,7 @@ spec:
             - -c
             - |
               /bin/mongodb_exporter \
-              {{- if .Values.auth.enabled }}
+              {{- if eq (toString .Values.auth.enabled) "true" }}
               --mongodb.uri mongodb://$METRICS_USER:$METRICS_PASSWORD@localhost:{{ .Values.mongodb.port }} \
               {{- else }}
               --mongodb.uri mongodb://localhost:{{ .Values.mongodb.port }} \
@@ -256,13 +272,13 @@ spec:
       - name: config
         configMap:
           name: {{ include "mongodb.fullname" . }}-config
-      {{- if .Values.auth.enabled }}
+      {{- if eq (toString .Values.auth.enabled) "true" }}
       - name: key
         secret:
           defaultMode: 0400
           secretName: {{ include "mongodb.keySecret" . }}
       {{- end }}
-  {{- if not .Values.persistence.enabled }}
+  {{- if eq (toString .Values.persistence.enabled) "false" }}
       - name: data
         emptyDir: {}
   {{- else }}
@@ -271,7 +287,7 @@ spec:
       name: data
       {{- with .Values.persistence.annotations }}
       annotations:
-      {{- toYaml . | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
       {{- with .Values.persistence.accessModes }}
@@ -289,3 +305,6 @@ spec:
       {{- end }}
       {{- end }}
   {{- end }}
+{{- end }}
+{{- end -}}
+{{- end -}}

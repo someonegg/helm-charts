@@ -29,7 +29,7 @@ data:
     mkdir -p /data/store/db
 
     cp -f /readonly-config/mongod.conf /data/store/conf/mongod.conf
-    {{- if .Values.auth.enabled }}
+    {{- if eq (toString .Values.auth.enabled) "true" }}
     cp -f /readonly-key/key.txt /data/store/conf/key.txt
     chmod 600 /data/store/conf/key.txt
     {{- end }}
@@ -53,7 +53,7 @@ data:
     shutdown_mongo() {
         local command="db.shutdownServer({force: true})"
         echo "Shutting down MongoDB (force: true)..."
-        {{- if .Values.auth.enabled }}
+        {{- if eq (toString .Values.auth.enabled) "true" }}
         if (! mongo admin --host "$LCAL_HOST" -u "$ADMIN_USER" -p "$ADMIN_PASSWORD" --eval "$command"); then
         {{- else }}
         if (! mongo admin --host "$LCAL_HOST" --eval "$command"); then
@@ -73,7 +73,7 @@ data:
         fi
 
         echo "Starting a MongoDB instance as standalone for init-js..."
-        {{- if .Values.auth.enabled }}
+        {{- if eq (toString .Values.auth.enabled) "true" }}
         mongod --config /data/store/conf/mongod.conf --auth --keyFile=/data/store/conf/key.txt \
                --dbpath=/data/store/db --port "$INIT_PORT" --bind_ip=0.0.0.0 &
         {{- else }}
@@ -84,7 +84,7 @@ data:
         echo "Waiting for MongoDB to be ready..."
         waiting_mongo
         echo "Running init js script on standalone mongod"
-        {{- if .Values.auth.enabled }}
+        {{- if eq (toString .Values.auth.enabled) "true" }}
         mongo admin --host "$LCAL_HOST" -u "$ADMIN_USER" -p "$ADMIN_PASSWORD" /readonly-config/initMongodStandalone.js
         {{- else }}
         mongo admin --host "$LCAL_HOST" /readonly-config/initMongodStandalone.js
@@ -93,7 +93,7 @@ data:
     }
     run_init_js
 
-    {{- if .Values.auth.enabled }}
+    {{- if eq (toString .Values.auth.enabled) "true" }}
 
     init_auth() {
         if [ -f /data/store/conf/done ]; then
