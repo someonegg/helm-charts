@@ -9,6 +9,8 @@ manualMode: false
 
 auth:
   enabled: false
+  MONGODBCR: false
+
   adminUser: admin # root
   adminPassword: QIEbsW7D
   # existingAdminSecret:

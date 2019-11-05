@@ -107,6 +107,9 @@ data:
         echo "Waiting for MongoDB to be ready..."
         waiting_mongo
         echo "Init auth on standalone mongod"
+        {{- if eq (toString .Values.auth.MONGODBCR) "true" }}
+        mongo admin --host "$LCAL_HOST" --eval "db.system.version.update({_id: 'authSchema'}, {_id: 'authSchema', currentVersion: 3}, {upsert: true})"
+        {{- end }}
         mongo admin --host "$LCAL_HOST" --eval "db.createUser({user: '$ADMIN_USER', pwd: '$ADMIN_PASSWORD', roles: [{role: 'root', db: 'admin'}]})"
         mongo admin --host "$LCAL_HOST" --eval "db.createUser({user: '$CLUSTER_USER', pwd: '$CLUSTER_PASSWORD', roles: [{role: 'clusterAdmin', db: 'admin'}]})"
         mongo admin --host "$LCAL_HOST" --eval "db.createUser({user: '$RWANY_USER', pwd: '$RWANY_PASSWORD', roles: ['readWriteAnyDatabase']})"
