@@ -87,8 +87,8 @@ mongos:
 metrics:
   enabled: false
   image:
-    repository: ssalaues/mongodb-exporter
-    tag: 0.6.1
+    repository: ssheehy/mongodb-exporter
+    tag: 0.10.0
     pullPolicy: IfNotPresent
 
   extraArgs: |-

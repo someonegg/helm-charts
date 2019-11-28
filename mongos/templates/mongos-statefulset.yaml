@@ -161,8 +161,8 @@ spec:
           {{- else }}
           --mongodb.uri mongodb://localhost:{{ .Values.mongos.port }} \
           {{- end }}
-          --web.metrics-path={{ .Values.metrics.path }} \
           --web.listen-address=:{{ .Values.metrics.port }} \
+          --web.telemetry-path={{ .Values.metrics.path }} \
           {{- with .Values.metrics.extraArgs }}
           {{- . | nindent 10 }}
           {{- end }}
