@@ -40,6 +40,7 @@ image:
   repository: mongo
   tag: 3.6.13
   pullPolicy: IfNotPresent
+  hasSessionMechanism: true
 
 persistence:
   enabled: false

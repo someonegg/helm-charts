@@ -132,13 +132,29 @@ spec:
           mountPath: /data/store
         readinessProbe:
           exec:
-            command: [ "mongo", "--port", "{{ .Values.mongos.port }}", "--eval", "db.adminCommand('ping')" ]
+            command:
+            - "mongo"
+            - "--port"
+            - "{{ .Values.mongos.port }}"
+            - "--eval"
+            - "db.adminCommand('ping')"
+            {{- if eq (toString .Values.image.hasSessionMechanism) "true" }}
+            - "--disableImplicitSessions"
+            {{- end }}
           {{- with .Values.mongos.readinessProbe }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
         livenessProbe:
           exec:
-            command: [ "mongo", "--port", "{{ .Values.mongos.port }}", "--eval", "db.adminCommand('ping')" ]
+            command:
+            - "mongo"
+            - "--port"
+            - "{{ .Values.mongos.port }}"
+            - "--eval"
+            - "db.adminCommand('ping')"
+            {{- if eq (toString .Values.image.hasSessionMechanism) "true" }}
+            - "--disableImplicitSessions"
+            {{- end }}
           {{- with .Values.mongos.livenessProbe }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
