@@ -6,7 +6,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $fullname }}-announce-{{ $i }}
+  name: {{ $fullname }}-{{ $i }}
   labels:
     {{- include "redis.labels" . | nindent 4 }}
   annotations:

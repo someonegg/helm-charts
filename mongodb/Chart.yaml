@@ -1,4 +1,4 @@
-apiVersion: v1
+apiVersion: v2
 name: mongodb
 home: https://www.mongodb.com
 version: 1.0.6

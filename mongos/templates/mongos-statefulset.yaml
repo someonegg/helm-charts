@@ -62,7 +62,7 @@ spec:
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       initContainers:
-      {{- if .Values.initSysctl.enabled }}
+      {{- if eq (toString .Values.initSysctl.enabled) "true" }}
       - name: init-sysctl
         image: {{ .Values.initSysctl.image.repository }}:{{ .Values.initSysctl.image.tag }}
         imagePullPolicy: {{ .Values.initSysctl.image.pullPolicy }}
@@ -88,7 +88,7 @@ spec:
         - |
           mkdir -p /data/store/conf
           cp -f /readonly-config/mongos.conf /data/store/conf/mongos.conf
-          {{- if eq (toString .Values.auth.enabled) "true" }}
+          {{- if eq (toString .Values.configsvr.auth.enabled) "true" }}
           cp -f /readonly-key/key.txt /data/store/conf/key.txt
           chmod 600 /data/store/conf/key.txt
           {{- end }}
@@ -96,7 +96,7 @@ spec:
         - name: config
           mountPath: /readonly-config
           readOnly: true
-        {{- if eq (toString .Values.auth.enabled) "true" }}
+        {{- if eq (toString .Values.configsvr.auth.enabled) "true" }}
         - name: key
           mountPath: /readonly-key
         {{- end }}
@@ -114,8 +114,8 @@ spec:
         - mongos
         args:
         - --config=/data/store/conf/mongos.conf
-        - --configdb={{ include "mongos.configsvr.rsAnnounce" . }}
-        {{- if eq (toString .Values.auth.enabled) "true" }}
+        - --configdb={{ include "mongos.configsvr.rsannounce" . }}
+        {{- if eq (toString .Values.configsvr.auth.enabled) "true" }}
         - --keyFile=/data/store/conf/key.txt
         {{- end }}
         - --bind_ip=0.0.0.0
@@ -156,7 +156,7 @@ spec:
         - -c
         - |
           /bin/mongodb_exporter \
-          {{- if eq (toString .Values.auth.enabled) "true" }}
+          {{- if eq (toString .Values.configsvr.auth.enabled) "true" }}
           --mongodb.uri mongodb://$METRICS_USER:$METRICS_PASSWORD@localhost:{{ .Values.mongos.port }} \
           {{- else }}
           --mongodb.uri mongodb://localhost:{{ .Values.mongos.port }} \
@@ -166,7 +166,7 @@ spec:
           {{- with .Values.metrics.extraArgs }}
           {{- . | nindent 10 }}
           {{- end }}
-        {{- if eq (toString .Values.auth.enabled) "true" }}
+        {{- if eq (toString .Values.configsvr.auth.enabled) "true" }}
         env:
         - name: METRICS_USER
           valueFrom:
@@ -189,7 +189,7 @@ spec:
             - -c
             - |
               /bin/mongodb_exporter \
-              {{- if eq (toString .Values.auth.enabled) "true" }}
+              {{- if eq (toString .Values.configsvr.auth.enabled) "true" }}
               --mongodb.uri mongodb://$METRICS_USER:$METRICS_PASSWORD@localhost:{{ .Values.mongos.port }} \
               {{- else }}
               --mongodb.uri mongodb://localhost:{{ .Values.mongos.port }} \
@@ -207,7 +207,7 @@ spec:
       - name: config
         configMap:
           name: {{ include "mongos.fullname" . }}-config
-      {{- if eq (toString .Values.auth.enabled) "true" }}
+      {{- if eq (toString .Values.configsvr.auth.enabled) "true" }}
       - name: key
         secret:
           secretName: {{ include "mongos.keySecret" . }}

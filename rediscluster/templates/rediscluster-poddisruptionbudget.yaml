@@ -2,13 +2,13 @@
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
-  name: {{ include "rediscl.fullname" . }}
+  name: {{ include "rediscluster.fullname" . }}
   labels:
-    {{- include "rediscl.labels" . | nindent 4 }}
+    {{- include "rediscluster.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "rediscl.name" . }}
+      app.kubernetes.io/name: {{ include "rediscluster.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
   {{- toYaml .Values.podDisruptionBudget | nindent 2 }}
 {{- end -}}

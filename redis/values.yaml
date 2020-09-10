@@ -35,8 +35,8 @@ podAnnotations: {}
 svcAnnotations: {}
 
 securityContext:
-  runAsUser: 1000
-  fsGroup: 1000
+  runAsUser: 999
+  fsGroup: 999
   runAsNonRoot: true
 
 hostNetwork: false
@@ -63,7 +63,7 @@ initSysctl:
   enabled: false
   image:
     repository: bitnami/minideb
-    tag: latest
+    tag: buster
     pullPolicy: IfNotPresent
   command: []
   mountHostSys: false
@@ -124,7 +124,7 @@ metrics:
   enabled: false
   image:
     repository: oliver006/redis_exporter
-    tag: v1.0.2
+    tag: v1.9.0
     pullPolicy: IfNotPresent
 
   extraEnvs: []

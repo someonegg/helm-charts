@@ -109,6 +109,13 @@ Get the announce address.
 {{- end -}}
 
 {{/*
+Get the name for the cluster secret.
+*/}}
+{{- define "mongos.clusterSecret" -}}
+{{- include "mongos.call-nested" (list . "configsvr" "mongodb.clusterSecret") -}}
+{{- end -}}
+
+{{/*
 Get the name for the metrics secret.
 */}}
 {{- define "mongos.metricsSecret" -}}
@@ -126,8 +133,8 @@ Get the name for the key secret.
 {{- include "mongos.call-nested" (list . "configsvr" "mongodb.announce") -}}
 {{- end -}}
 
-{{- define "mongos.configsvr.rsAnnounce" -}}
-{{- include "mongos.call-nested" (list . "configsvr" "mongodb.rsAnnounce") -}}
+{{- define "mongos.configsvr.rsannounce" -}}
+{{- include "mongos.call-nested" (list . "configsvr" "mongodb.rsannounce") -}}
 {{- end -}}
 
 {{- define "mongos.configsvr.hidden.announce" -}}

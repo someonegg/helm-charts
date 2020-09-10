@@ -1,14 +1,14 @@
-{{- if not .Values.manualMode -}}
+{{- if .Values.shardCollections -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "mongodb.fullname" . }}-bootstrap
+  name: {{ include "mongos.fullname" . }}-bootstrap
   labels:
-    {{- include "mongodb.labels" . | nindent 4 }}
+    {{- include "mongos.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": "post-install,post-upgrade,post-rollback"
     "helm.sh/hook-delete-policy": "hook-succeeded,before-hook-creation"
-    "helm.sh/hook-weight": "-15"
+    "helm.sh/hook-weight": "-10"
 spec:
   template:
     spec:
@@ -22,23 +22,16 @@ spec:
         args:
         - /readonly-config/bootstrap.sh
         env:
-        {{- if (eq "shardsvr" .Values.clusterRole) }}
-        - name: ANNOUNCE_MONGOS
-          valueFrom:
-            configMapKeyRef:
-              name: {{ .Values.mongosAnnounce }}
-              key: mongos
-        {{- end }}
-        {{- if eq (toString .Values.auth.enabled) "true" }}
+        {{- if eq (toString .Values.configsvr.auth.enabled) "true" }}
         - name: CLUSTER_USER
           valueFrom:
             secretKeyRef:
-              name: {{ include "mongodb.clusterSecret" . }}
+              name: {{ include "mongos.clusterSecret" . }}
               key: user
         - name: CLUSTER_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ include "mongodb.clusterSecret" . }}
+              name: {{ include "mongos.clusterSecret" . }}
               key: password
         {{- end }}
         volumeMounts:
@@ -48,5 +41,5 @@ spec:
       volumes:
       - name: bootstrap
         configMap:
-          name: {{ include "mongodb.fullname" . }}-bootstrap
+          name: {{ include "mongos.fullname" . }}-bootstrap
 {{- end -}}

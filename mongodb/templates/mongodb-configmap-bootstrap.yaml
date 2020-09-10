@@ -32,7 +32,7 @@ data:
         local initiate_js="rs.initiate({ \
           _id: '{{ .Values.replSet }}', \
           members: [
-            {{- range $i := until $replicas -}}
+            {{- range $i := until 1 -}}
             {{- if gt $i 0 -}} , {{- end -}}
             { _id: {{ $i }}, host: '{{ $fullname }}-{{ $i }}.{{ $suffixFQDN }}:{{ $dbport }}' }
             {{- end -}}
@@ -112,6 +112,26 @@ data:
         sleep 5
     done
 
+    {{- if (eq "shardsvr" .Values.clusterRole) }}
+
+    IFS=',' read -ra MONGOS_ADDR <<< "$ANNOUNCE_MONGOS"
+
+    add_shard() {
+        echo "add shard..."
+
+        local output=""
+        output=$( "${MONGOCLI[@]}" --host "${MONGOS_ADDR[0]}" \
+            --eval "sh.addShard('{{ .Values.replSet }}/{{ $fullname }}-0.{{ $suffixFQDN }}:{{ $dbport }}').ok" )
+        if [[ "$output" != "1" ]]; then
+            return 1
+        fi
+        return 0
+    }
+    until add_shard; do
+        sleep 5
+    done
+    {{- end }}
+
     {{- if ne $hiddens 0 }}
 
     HIDDENS=()
@@ -157,24 +177,6 @@ data:
 
     until hidden_is_completed; do
         hidden_try_once
-        sleep 5
-    done
-    {{- end }}
-
-    {{- if (eq "shardsvr" .Values.clusterRole) }}
-
-    add_shard() {
-        echo "add shard..."
-
-        local output=""
-        output=$( "${MONGOCLI[@]}" --host "$ANNOUNCE_MONGOS" \
-            --eval "sh.addShard('{{ .Values.replSet }}/{{ $fullname }}-0.{{ $suffixFQDN }}:{{ $dbport }}').ok" )
-        if [[ "$output" != "1" ]]; then
-            return 1
-        fi
-        return 0
-    }
-    until add_shard; do
         sleep 5
     done
     {{- end }}

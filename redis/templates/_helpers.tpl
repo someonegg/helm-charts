@@ -83,30 +83,34 @@ Create the name for the auth secret.
 {{- end -}}
 {{- end -}}
 
-{{/*
-Get the announce address.
-*/}}
-{{- define "redis.announce" -}}
-{{- $replicas := int .Values.replicas -}}
-{{- $dbport := int .Values.sentinel.port -}}
-{{- range $i := until $replicas -}}
-{{- with $ -}}
-{{- if gt $i 0 -}},{{- end -}}
-{{- include "redis.fullname" . -}}-announce-{{ $i }}.{{ .Release.Namespace }}.svc:{{ $dbport }}
-{{- end -}}
-{{- end -}}
+{{- define "redis.masterGroup" -}}
+{{- .Values.masterGroupName -}}
 {{- end -}}
 
 {{/*
 Get the instances announce address.
 */}}
-{{- define "redis.insts.announce" -}}
+{{- define "redis.announce" -}}
 {{- $replicas := int .Values.replicas -}}
 {{- $dbport := int .Values.redis.port -}}
 {{- range $i := until $replicas -}}
 {{- with $ -}}
 {{- if gt $i 0 -}},{{- end -}}
-{{- include "redis.fullname" . -}}-announce-{{ $i }}.{{ .Release.Namespace }}.svc:{{ $dbport }}
+{{- include "redis.fullname" . -}}-{{ $i }}.{{ .Release.Namespace }}.svc:{{ $dbport }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Get the sentinel announce address.
+*/}}
+{{- define "redis.sentinel.announce" -}}
+{{- $replicas := int .Values.replicas -}}
+{{- $dbport := int .Values.sentinel.port -}}
+{{- range $i := until $replicas -}}
+{{- with $ -}}
+{{- if gt $i 0 -}},{{- end -}}
+{{- include "redis.fullname" . -}}-{{ $i }}.{{ .Release.Namespace }}.svc:{{ $dbport }}
 {{- end -}}
 {{- end -}}
 {{- end -}}

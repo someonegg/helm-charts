@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "rediscl.fullname" . }}-domain
+  name: {{ include "rediscluster.fullname" . }}
   labels:
-    {{- include "rediscl.labels" . | nindent 4 }}
-    serviceMonitor: "true"
+    {{- include "rediscluster.labels" . | nindent 4 }}
+    service-monitor: "true"
   annotations:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
     {{- with .Values.svcAnnotations }}
@@ -20,7 +20,7 @@ spec:
     protocol: TCP
     targetPort: redis
   - name: bus
-    port: {{ include "rediscl.busPort" . }}
+    port: {{ include "rediscluster.busPort" . }}
     protocol: TCP
     targetPort: bus
   {{- if eq (toString .Values.metrics.enabled) "true" }}
@@ -30,5 +30,5 @@ spec:
     targetPort: metrics
   {{- end }}
   selector:
-    app.kubernetes.io/name: {{ include "rediscl.name" . }}
+    app.kubernetes.io/name: {{ include "rediscluster.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}

@@ -2,6 +2,22 @@
 
 replicas: 3
 
+shardGroups: 2
+shardCollections: []
+# - database: db1
+#   collection: colA
+#   key: keyX
+#   mode: hashed
+#   chunks: "8192"
+# - database: db2
+#   collection: colB
+#   key: keyY
+#   mode: ranged
+# - database: db3
+#   collection: colC
+#   key: keyZ
+#   mode: ranged-unique
+
 configsvr:
   replSet: config
   clusterRole: configsvr
@@ -52,7 +68,7 @@ initSysctl:
   enabled: false
   image:
     repository: bitnami/minideb
-    tag: latest
+    tag: buster
     pullPolicy: IfNotPresent
   command: []
   mountHostSys: false

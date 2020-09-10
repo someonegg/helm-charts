@@ -86,7 +86,7 @@ initSysctl:
   enabled: false
   image:
     repository: bitnami/minideb
-    tag: latest
+    tag: buster
     pullPolicy: IfNotPresent
   command: []
   mountHostSys: false

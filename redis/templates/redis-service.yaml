@@ -1,10 +1,11 @@
+---
 apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "redis.fullname" . }}
   labels:
     {{- include "redis.labels" . | nindent 4 }}
-    serviceMonitor: "true"
+    service-monitor: "true"
   annotations:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
     {{- with .Values.svcAnnotations }}
@@ -29,6 +30,31 @@ spec:
     protocol: TCP
     targetPort: metrics
   {{- end }}
+  selector:
+    app.kubernetes.io/name: {{ include "redis.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "redis.fullname" . }}-ready
+  labels:
+    {{- include "redis.labels" . | nindent 4 }}
+  annotations:
+    {{- with .Values.svcAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  type: ClusterIP
+  ports:
+  - name: redis
+    port: {{ .Values.redis.port }}
+    protocol: TCP
+    targetPort: redis
+  - name: sentinel
+    port: {{ .Values.sentinel.port }}
+    protocol: TCP
+    targetPort: sentinel
   selector:
     app.kubernetes.io/name: {{ include "redis.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}

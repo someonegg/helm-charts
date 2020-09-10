@@ -1,4 +1,4 @@
-{{- if and (eq (toString .Values.metrics.enabled) "true") .Values.metrics.serviceMonitor.enabled -}}
+{{- if and (eq (toString .Values.metrics.enabled) "true") (eq (toString .Values.metrics.serviceMonitor.enabled) "true") -}}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:

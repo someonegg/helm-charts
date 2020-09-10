@@ -1,13 +1,13 @@
-{{- if and (eq (toString .Values.metrics.enabled) "true") .Values.metrics.serviceMonitor.enabled -}}
+{{- if and (eq (toString .Values.metrics.enabled) "true") (eq (toString .Values.metrics.serviceMonitor.enabled) "true") -}}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ include "rediscl.fullname" . }}
+  name: {{ include "rediscluster.fullname" . }}
   {{- with .Values.metrics.serviceMonitor.prometheusNamespace }}
   namespace: {{ . }}
   {{- end }}
   labels:
-    {{- include "rediscl.labels" . | nindent 4 }}
+    {{- include "rediscluster.labels" . | nindent 4 }}
     {{- with .Values.metrics.serviceMonitor.prometheusSelector }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -22,7 +22,7 @@ spec:
     - {{ .Release.Namespace }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "rediscl.name" . }}
+      app.kubernetes.io/name: {{ include "rediscluster.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
-      serviceMonitor: "true"
+      service-monitor: "true"
 {{- end -}}

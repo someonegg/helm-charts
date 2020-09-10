@@ -17,7 +17,7 @@ data:
     #!/bin/bash
     # set -x
 
-    POD_IP=$(getent hosts "$POD_NAME.{{ include "mongodb.fullname" . }}" | awk '{ print $1 }')
+    POD_IP=$(getent hosts "$POD_NAME.{{ include "mongodb.fullname" . }}.{{ .Release.Namespace }}.svc" | awk '{ print $1 }')
     if [ -z "$POD_IP" ]; then
         echo "Could not resolve the ip for this pod"
         exit 1

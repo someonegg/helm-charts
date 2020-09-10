@@ -63,7 +63,7 @@ spec:
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       initContainers:
-      {{- if .Values.initSysctl.enabled }}
+      {{- if eq (toString .Values.initSysctl.enabled) "true" }}
       - name: init-sysctl
         image: {{ .Values.initSysctl.image.repository }}:{{ .Values.initSysctl.image.tag }}
         imagePullPolicy: {{ .Values.initSysctl.image.pullPolicy }}
@@ -202,7 +202,7 @@ spec:
         - --web.listen-address=:{{ .Values.metrics.port }}
         env:
         - name: REDIS_ADDR
-          value: redis://localhost:{{ .Values.redis.port }}
+          value: "redis://localhost:{{ .Values.redis.port }}"
         {{- if eq (toString .Values.auth.enabled) "true" }}
         - name: REDIS_PASSWORD
           valueFrom:

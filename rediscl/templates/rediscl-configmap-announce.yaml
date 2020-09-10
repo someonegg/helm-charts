@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ include "rediscl.fullname" . }}-announce
-  labels:
-    {{- include "rediscl.labels" . | nindent 4 }}
-data:
-  rediscl: {{ include "rediscl.announce" . | quote }}

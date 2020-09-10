@@ -5,9 +5,9 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "rediscl.fullname" . }}-{{ $i }}
+  name: {{ include "rediscluster.fullname" . }}-{{ $i }}
   labels:
-    {{- include "rediscl.labels" . | nindent 4 }}
+    {{- include "rediscluster.labels" . | nindent 4 }}
   {{- with .Values.podAnnotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -15,10 +15,10 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "rediscl.name" . }}
+      app.kubernetes.io/name: {{ include "rediscluster.name" . }}
       app.kubernetes.io/instance: {{ .Release.Name }}
-      rediscl/group: "{{ $i }}"
-  serviceName: {{ include "rediscl.fullname" . }}-domain
+      rediscluster/group: "{{ $i }}"
+  serviceName: {{ include "rediscluster.fullname" . }}
   replicas: {{ .Values.replicas }}
   podManagementPolicy: OrderedReady
   updateStrategy:
@@ -26,12 +26,12 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "rediscl.name" . }}
+        app.kubernetes.io/name: {{ include "rediscluster.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
-        rediscl/group: "{{ $i }}"
+        rediscluster/group: "{{ $i }}"
       annotations:
-        checksum/configmap-config: {{ include (print .Template.BasePath "/rediscl-configmap-config.yaml") . | sha256sum }}
-        checksum/configmap-probe: {{ include (print .Template.BasePath "/rediscl-configmap-probe.yaml") . | sha256sum }}
+        checksum/configmap-config: {{ include (print .Template.BasePath "/rediscluster-configmap-config.yaml") . | sha256sum }}
+        checksum/configmap-probe: {{ include (print .Template.BasePath "/rediscluster-configmap-probe.yaml") . | sha256sum }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -57,7 +57,7 @@ spec:
         {{- tpl . $ | nindent 8 }}
       {{- else }}
       affinity:
-        {{- include "rediscl.podDefaultAffinity" (list . $i) | nindent 8 }}
+        {{- include "rediscluster.podDefaultAffinity" (list . $i) | nindent 8 }}
       {{- end }}
       {{- with .Values.securityContext }}
       securityContext:
@@ -69,7 +69,7 @@ spec:
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       initContainers:
-      {{- if .Values.initSysctl.enabled }}
+      {{- if eq (toString .Values.initSysctl.enabled) "true" }}
       - name: init-sysctl
         image: {{ .Values.initSysctl.image.repository }}:{{ .Values.initSysctl.image.tag }}
         imagePullPolicy: {{ .Values.initSysctl.image.pullPolicy }}
@@ -101,13 +101,13 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        - name: REDISCL_GROUP
+        - name: REDISCLUSTER_GROUP
           value: "{{ $i }}"
         {{- if eq (toString .Values.auth.enabled) "true" }}
         - name: AUTH
           valueFrom:
             secretKeyRef:
-              name: {{ include "rediscl.authSecret" . }}
+              name: {{ include "rediscluster.authSecret" . }}
               key: password
         {{- end }}
         volumeMounts:
@@ -133,14 +133,14 @@ spec:
         - name: AUTH
           valueFrom:
             secretKeyRef:
-              name: {{ include "rediscl.authSecret" . }}
+              name: {{ include "rediscluster.authSecret" . }}
               key: password
         {{- end }}
         ports:
         - name: redis
           containerPort: {{ .Values.redis.port }}
         - name: bus
-          containerPort: {{ include "rediscl.busPort" . }}
+          containerPort: {{ include "rediscluster.busPort" . }}
         volumeMounts:
         - name: data
           mountPath: /data/store
@@ -171,12 +171,12 @@ spec:
         - --web.listen-address=:{{ .Values.metrics.port }}
         env:
         - name: REDIS_ADDR
-          value: redis://localhost:{{ .Values.redis.port }}
+          value: "redis://localhost:{{ .Values.redis.port }}"
         {{- if eq (toString .Values.auth.enabled) "true" }}
         - name: REDIS_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: {{ include "rediscl.authSecret" . }}
+              name: {{ include "rediscluster.authSecret" . }}
               key: password
         {{- end }}
         {{- with .Values.metrics.extraEnvs }}
@@ -200,10 +200,10 @@ spec:
       volumes:
       - name: config
         configMap:
-          name: {{ include "rediscl.fullname" . }}-config
+          name: {{ include "rediscluster.fullname" . }}-config
       - name: probe
         configMap:
-          name: {{ include "rediscl.fullname" . }}-probe
+          name: {{ include "rediscluster.fullname" . }}-probe
       {{- if .Values.initSysctl.mountHostSys }}
       - name: host-sys
         hostPath:

@@ -78,7 +78,7 @@ spec:
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       initContainers:
-      {{- if .Values.initSysctl.enabled }}
+      {{- if eq (toString .Values.initSysctl.enabled) "true" }}
       - name: init-sysctl
         image: {{ .Values.initSysctl.image.repository }}:{{ .Values.initSysctl.image.tag }}
         imagePullPolicy: {{ .Values.initSysctl.image.pullPolicy }}

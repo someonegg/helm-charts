@@ -1,0 +1,100 @@
+{{- if .Values.shardCollections -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "mongos.fullname" . }}-bootstrap
+  labels:
+    {{- include "mongos.labels" . | nindent 4 }}
+data:
+  bootstrap.sh: |
+    #!/bin/bash
+    # set -x
+
+    {{- if eq (toString .Values.configsvr.auth.enabled) "true" }}
+    MONGOCLI=(mongo -u "$CLUSTER_USER" -p "$CLUSTER_PASSWORD" --authenticationDatabase admin --quiet)
+    {{- else }}
+    MONGOCLI=(mongo --quiet)
+    {{- end }}
+
+    IFS=',' read -ra MONGOS_ADDR <<< {{ include "mongos.announce" . | quote }}
+
+    waiting_shards() {
+        echo "waiting_shards()"
+
+        local count=""
+        count=$( "${MONGOCLI[@]}" --host "${MONGOS_ADDR[0]}" \
+            --eval "sh.status()" | grep '"host"' | grep '"state" : 1' | wc -l)
+        if [[ $count < {{ .Values.shardGroups }} ]]; then
+            return 1
+        fi
+        return 0
+    }
+    until waiting_shards; do
+        sleep 5
+    done
+
+    enable_sharding() {
+        echo "enableSharding($1)"
+
+        local ret=""
+        ret=$( "${MONGOCLI[@]}" --host "${MONGOS_ADDR[0]}" \
+            --eval "sh.enableSharding($1).ok" )
+        if [[ "$ret" == "1" ]]; then
+            return 0
+        fi
+        ret=$( "${MONGOCLI[@]}" --host "${MONGOS_ADDR[0]}" \
+            --eval "sh.enableSharding($1).code" )
+        if [[ "$ret" == "23" ]]; then
+            return 0
+        fi
+        return 1
+    }
+
+    shard_collection() {
+        echo "shardCollection($1)"
+
+        local ret=""
+        ret=$( "${MONGOCLI[@]}" --host "${MONGOS_ADDR[0]}" \
+            --eval "sh.shardCollection($1).ok" )
+        if [[ "$ret" == "1" ]]; then
+            return 0
+        fi
+        ret=$( "${MONGOCLI[@]}" --host "${MONGOS_ADDR[0]}" \
+            --eval "sh.shardCollection($1).code" )
+        if [[ "$ret" == "20" ]]; then
+            return 0
+        fi
+        return 1
+    }
+
+    {{/* separator line */}}
+
+    {{- range $_, $item := .Values.shardCollections -}}
+    {{- with $ -}}
+
+    {{- $shargs := printf `"%s"` $item.database -}}
+    until enable_sharding {{ $shargs | quote }}; do
+        sleep 5
+    done
+    {{/* separator line */}}
+
+    {{- if eq $item.mode "hashed" -}}
+    {{- $shargs = printf `"%s.%s",{%s:"hashed"},false,{numInitialChunks: %s}` $item.database $item.collection $item.key $item.chunks -}}
+    {{- else if eq $item.mode "ranged" -}}
+    {{- $shargs = printf `"%s.%s",{%s:1}` $item.database $item.collection $item.key -}}
+    {{- else if eq $item.mode "ranged-unique" -}}
+    {{- $shargs = printf `"%s.%s",{%s:1}, true` $item.database $item.collection $item.key -}}
+    {{- else -}}
+    {{- required "A valid shardCollections.mode required!" "" -}}
+    {{- end -}}
+    until shard_collection {{ $shargs | quote }}; do
+        sleep 5
+    done
+
+    {{/* separator line */}}
+    {{- end -}}
+    {{- end -}}
+
+    echo "bootstrap done"
+    exit 0
+{{- end -}}

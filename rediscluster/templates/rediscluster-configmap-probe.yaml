@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "rediscl.fullname" . }}-probe
+  name: {{ include "rediscluster.fullname" . }}-probe
   labels:
-    {{- include "rediscl.labels" . | nindent 4 }}
+    {{- include "rediscluster.labels" . | nindent 4 }}
 data:
   readiness.sh: |
     #!/bin/sh

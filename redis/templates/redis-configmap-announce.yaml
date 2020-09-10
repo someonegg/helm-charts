@@ -5,5 +5,6 @@ metadata:
   labels:
     {{- include "redis.labels" . | nindent 4 }}
 data:
+  masterGroup: {{ include "redis.masterGroup" . | quote }}
   redis: {{ include "redis.announce" . | quote }}
-  redis.insts: {{ include "redis.insts.announce" . | quote }}
+  sentinel: {{ include "redis.sentinel.announce" . | quote }}

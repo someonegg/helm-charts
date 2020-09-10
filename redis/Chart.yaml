@@ -1,7 +1,7 @@
-apiVersion: v1
+apiVersion: v2
 name: redis
 home: http://redis.io
-version: 1.0.5
+version: 1.0.6
 appVersion: 4.0.14
 description: Highly available Kubernetes implementation of Redis.
 sources:

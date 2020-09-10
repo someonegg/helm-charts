@@ -1,5 +1,6 @@
 {{- if not .Values.manualMode -}}
-{{- $fullname := include "rediscl.fullname" . -}}
+{{- $fullname := include "rediscluster.fullname" . -}}
+{{- $suffix := printf "%s.svc" .Release.Namespace -}}
 {{- $groups := int .Values.groups -}}
 {{- $replicas := int .Values.replicas -}}
 {{- $dbport := int .Values.redis.port -}}
@@ -8,7 +9,7 @@ kind: ConfigMap
 metadata:
   name: {{ $fullname }}-bootstrap
   labels:
-    {{- include "rediscl.labels" . | nindent 4 }}
+    {{- include "rediscluster.labels" . | nindent 4 }}
 data:
   bootstrap.sh: |
     #!/bin/bash
@@ -23,9 +24,9 @@ data:
 
     announce_ip() {
         {{- if .Values.hostNetwork }}
-        getent hosts "{{ $fullname }}-$1-$2.{{ $fullname }}-domain" | awk '{ print $1 }'
+        getent hosts "{{ $fullname }}-$1-$2.{{ $fullname }}.{{ $suffix }}" | awk '{ print $1 }'
         {{- else }}
-        getent hosts "{{ $fullname }}-announce-$1-$2" | awk '{ print $1 }'
+        getent hosts "{{ $fullname }}-$1-$2.{{ $suffix }}" | awk '{ print $1 }'
         {{- end }}
     }
 
@@ -64,6 +65,9 @@ data:
 
     group_master() {
         local i=$1; local j=0
+        local MASTER_IP=""
+        local MASTER_ID=""
+        local MASTER_EPOCH=-1
         for j in {0.. {{- sub $replicas 1 -}} }; do
             local IP=$(announce_ip $i $j)
             if [ -z "$IP" ]; then
@@ -72,10 +76,18 @@ data:
             local MYSELF=$({{ $rediscli }} -h $IP CLUSTER NODES 2>/dev/null | grep 'myself,master')
             if [ -n "$MYSELF" ]; then
                 local ID=$(echo $MYSELF | awk '{ print $1 }')
-                echo $IP $ID
-                return 0
+                local EPOCH=$(echo $MYSELF | awk '{ print $7 }')
+                if (( $EPOCH > $MASTER_EPOCH )); then
+                    MASTER_IP=$IP
+                    MASTER_ID=$ID
+                    MASTER_EPOCH=$EPOCH
+                fi
             fi
         done
+        if (( $MASTER_EPOCH >= 0 )); then
+            echo $MASTER_IP $MASTER_ID
+            return 0
+        fi
         return 1
     }
 
@@ -132,7 +144,7 @@ data:
         yes "yes" | redis-cli --cluster fix $ANCHOR:{{ $dbport }}
         {{- end }}
 
-        {{- if .Values.rebalance.enabled }}
+        {{- if eq (toString .Values.rebalance.enabled) "true" }}
         sleep {{ .Values.rebalance.delaySeconds }}
         {{- if eq (toString .Values.auth.enabled) "true" }}
         yes "yes" | redis-cli -a "$AUTH" --cluster rebalance $ANCHOR:{{ $dbport }} --cluster-use-empty-masters

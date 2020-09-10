@@ -1,4 +1,4 @@
-{{- $fullname := include "rediscl.fullname" . -}}
+{{- $fullname := include "rediscluster.fullname" . -}}
 {{- $groups := int .Values.groups -}}
 {{- $replicas := int .Values.replicas -}}
 {{- range $i := until $groups }}
@@ -8,9 +8,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $fullname }}-announce-{{ $i }}-{{ $j }}
+  name: {{ $fullname }}-{{ $i }}-{{ $j }}
   labels:
-    {{- include "rediscl.labels" . | nindent 4 }}
+    {{- include "rediscluster.labels" . | nindent 4 }}
   annotations:
     service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
     {{- with .Values.svcAnnotations }}
@@ -25,11 +25,11 @@ spec:
     protocol: TCP
     targetPort: redis
   - name: bus
-    port: {{ include "rediscl.busPort" . }}
+    port: {{ include "rediscluster.busPort" . }}
     protocol: TCP
     targetPort: bus
   selector:
-    app.kubernetes.io/name: {{ include "rediscl.name" . }}
+    app.kubernetes.io/name: {{ include "rediscluster.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     statefulset.kubernetes.io/pod-name: {{ $fullname }}-{{ $i }}-{{ $j }}
 {{- end }}

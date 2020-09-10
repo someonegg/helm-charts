@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "rediscl.fullname" . }}-config
+  name: {{ include "rediscluster.fullname" . }}-config
   labels:
-    {{- include "rediscl.labels" . | nindent 4 }}
+    {{- include "rediscluster.labels" . | nindent 4 }}
 data:
   redis.conf: |
     {{- if .Values.redis.customConfig }}
@@ -27,13 +27,15 @@ data:
     # set -x
 
     INDEX="${POD_NAME##*-}"
-    ANNOUNCE={{ include "rediscl.fullname" . }}-announce-$REDISCL_GROUP
     REDIS_CONF=/data/store/conf/redis.conf
+    REDIS_PORT={{ .Values.redis.port }}
+    {{- $fullname := include "rediscluster.fullname" . -}}
+    {{- $suffix := printf "%s.svc" .Release.Namespace -}}
 
     {{- if .Values.hostNetwork }}
     ANNOUNCE_IP=$POD_IP
     {{- else }}
-    ANNOUNCE_IP=$(getent hosts "$ANNOUNCE-$INDEX" | awk '{ print $1 }')
+    ANNOUNCE_IP=$(getent hosts "{{ $fullname }}-$REDISCLUSTER_GROUP-$INDEX.{{ $suffix }}" | awk '{ print $1 }')
     {{- end }}
     if [ -z "$ANNOUNCE_IP" ]; then
         echo "Could not resolve the announce ip for this pod"
@@ -54,7 +56,10 @@ data:
     mkdir -p /data/store/db
 
     cp -f /readonly-config/redis.conf "$REDIS_CONF"
+    echo "slave-announce-ip $ANNOUNCE_IP" >> $REDIS_CONF
+    echo "slave-announce-port $REDIS_PORT" >> $REDIS_CONF
     echo "cluster-announce-ip $ANNOUNCE_IP" >> $REDIS_CONF
+    echo "cluster-announce-port $REDIS_PORT" >> $REDIS_CONF
 
     {{- if eq (toString .Values.auth.enabled) "true" }}
 
