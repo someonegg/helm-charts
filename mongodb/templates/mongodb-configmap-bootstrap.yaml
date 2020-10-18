@@ -147,7 +147,7 @@ data:
             id=$((i+100))
             peer=${HIDDENS[$i]}
             "${MONGOCLI[@]}" --host "$master" --eval \
-                "rs.add({_id: $id, host: '$peer', hidden: true, priority: 0})"
+                "rs.add({_id: $id, host: '$peer', hidden: true, votes: 0, priority: 0})"
         done
     }
 
